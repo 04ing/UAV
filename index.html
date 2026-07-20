@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="无人机智能巡检系统 — 端边云协同的智能巡检平台" />
+  <title>无人机智能巡检系统</title>
+
+  <!-- Favicon: 飞行器 emoji SVG -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ctext%20y='.9em'%20font-size='90'%3E%F0%9F%9B%A9%EF%B8%8F%3C/text%3E%3C/svg%3E" />
+
+  <!-- 字体：Oxanium（显示字） + 思源黑体 Noto Sans SC（正文） -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- 第三方库 CDN：Leaflet 1.9.4 -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+
+  <!-- 第三方库 CDN：ECharts 5.5.0 -->
+  <script src="https://unpkg.com/echarts@5.5.0/dist/echarts.min.js"></script>
+
+  <!-- 第三方库 CDN：Three.js 0.160.0 + OrbitControls -->
+  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+
+  <!-- 本地 CSS -->
+  <link rel="stylesheet" href="/css/tokens.css" />
+  <link rel="stylesheet" href="/css/base.css" />
+</head>
+<body>
+  <!-- 应用根容器 -->
+  <div id="app">
+    <!-- ============ 侧边栏 ============ -->
+    <aside class="sidebar">
+      <div class="sidebar__brand">
+        <span class="sidebar__brand-icon">🛩️</span>
+        <span class="sidebar__brand-text">无人机巡检</span>
+      </div>
+
+      <nav class="sidebar__nav" id="nav-menu">
+        <!-- 菜单项由 app.js 动态渲染，也可静态预写以保证无 JS 时可见 -->
+        <a class="sidebar__nav-item" data-route="overview" href="#/overview">
+          <span class="nav-icon">🗺️</span><span>架构总览</span>
+        </a>
+        <a class="sidebar__nav-item" data-route="dashboard" href="#/dashboard">
+          <span class="nav-icon">📊</span><span>中控大屏</span>
+        </a>
+        <a class="sidebar__nav-item" data-route="flight" href="#/flight">
+          <span class="nav-icon">🚁</span><span>飞控管理</span>
+        </a>
+        <a class="sidebar__nav-item" data-route="ai-recognize" href="#/ai-recognize">
+          <span class="nav-icon">🧠</span><span>AI智能识别</span>
+        </a>
+        <a class="sidebar__nav-item" data-route="business" href="#/business">
+          <span class="nav-icon">💼</span><span>业务管理</span>
+        </a>
+        <a class="sidebar__nav-item" data-route="gis" href="#/gis">
+          <span class="nav-icon">🌍</span><span>GIS监控</span>
+        </a>
+        <a class="sidebar__nav-item" data-route="three" href="#/three">
+          <span class="nav-icon">🧊</span><span>三维展示</span>
+        </a>
+        <a class="sidebar__nav-item" data-route="report" href="#/report">
+          <span class="nav-icon">📄</span><span>巡检报表</span>
+        </a>
+        <a class="sidebar__nav-item" data-route="ops" href="#/ops">
+          <span class="nav-icon">🛡️</span><span>运维安全</span>
+        </a>
+        <a class="sidebar__nav-item" data-route="api" href="#/api">
+          <span class="nav-icon">🔌</span><span>接口管理</span>
+        </a>
+        <a class="sidebar__nav-item" data-route="ai-algorithm" href="#/ai-algorithm">
+          <span class="nav-icon">⚙️</span><span>AI算法</span>
+        </a>
+      </nav>
+
+      <div class="sidebar__footer">
+        v1.0.0 · 端边云协同
+      </div>
+    </aside>
+
+    <!-- ============ 顶部状态栏 ============ -->
+    <header class="topbar">
+      <div class="topbar__left">
+        <div class="topbar__title">
+          无人机智能 <span class="accent">巡检系统</span>
+        </div>
+      </div>
+
+      <div class="topbar__right">
+        <div class="topbar__clock" id="clock">--:--:--</div>
+
+        <div class="topbar__user" id="user-info">
+          <div class="topbar__user-avatar" id="user-avatar">U</div>
+          <span id="user-name">运维管理员</span>
+        </div>
+
+        <button class="topbar__logout" id="btn-logout" title="退出登录">
+          <span>⏻</span><span>退出</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ============ 主区（动态加载页面内容） ============ -->
+    <main class="content">
+      <div id="view"><!-- 页面内容由 app.js 渲染至此 --></div>
+    </main>
+
+    <!-- ============ 底部状态指示条 ============ -->
+    <footer class="statusbar">
+      <div class="statusbar__group">
+        <div class="statusbar__item">
+          <span class="status-dot is-online"></span>
+          <span class="label">系统状态:</span>
+          <span class="value">运行中</span>
+        </div>
+        <div class="statusbar__item">
+          <span class="label">后端连接:</span>
+          <span class="value" id="backend-status">检测中</span>
+        </div>
+        <div class="statusbar__item">
+          <span class="label">在线无人机:</span>
+          <span class="value" id="online-drones">0</span>
+        </div>
+      </div>
+
+      <div class="statusbar__group">
+        <div class="statusbar__item">
+          <span class="label">CPU:</span>
+          <span class="value" id="cpu-usage">--%</span>
+        </div>
+        <div class="statusbar__item">
+          <span class="label">内存:</span>
+          <span class="value" id="mem-usage">--%</span>
+        </div>
+        <div class="statusbar__item">
+          <span class="label">网络:</span>
+          <span class="value" id="net-status">--</span>
+        </div>
+        <div class="statusbar__item">
+          <span class="value" id="env-tag">PROD</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ES Module 入口 -->
+  <script type="module" src="/js/app.js"></script>
+  <script type="module" src="/js/api.js"></script>
+</body>
+</html>
