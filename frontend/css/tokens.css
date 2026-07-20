@@ -1,0 +1,63 @@
+/* =====================================================================
+ * tokens.css — 无人机智能巡检系统 · 设计令牌
+ * 深色科技风 · 霓虹蓝青主题 · 适配中控大屏 1920×1080+
+ * ===================================================================== */
+
+:root {
+  /* ---------- 背景色 ---------- */
+  --bg-deep: #050913;
+  --bg-base: #0a1224;
+  --bg-elev: #111c36;
+  --bg-card: rgba(17, 28, 54, 0.6);
+
+  /* ---------- 文字色 ---------- */
+  --fg-primary: #e8f0ff;
+  --fg-secondary: #8a9bbd;
+  --fg-muted: #4a5876;
+
+  /* ---------- 主题色 · 霓虹蓝青 ---------- */
+  --accent-cyan: #00e5ff;
+  --accent-blue: #0066ff;
+  --accent-electric: #4d9fff;
+
+  /* ---------- 警示色 ---------- */
+  --warn: #ff9500;
+  --danger: #ff3b6b;
+  --success: #00f5a0;
+
+  /* ---------- 边框 ---------- */
+  --border-base: rgba(0, 229, 255, 0.15);
+  --border-glow: rgba(0, 229, 255, 0.4);
+
+  /* ---------- 阴影 ---------- */
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 24px rgba(0, 229, 255, 0.3);
+
+  /* ---------- 字体族 ---------- */
+  --font-display: 'Oxanium', 'Noto Sans SC', sans-serif;
+  --font-body: 'Noto Sans SC', system-ui, sans-serif;
+
+  /* ---------- 字号 ---------- */
+  --fs-xs: 12px;
+  --fs-sm: 14px;
+  --fs-base: 16px;
+  --fs-lg: 18px;
+  --fs-xl: 24px;
+  --fs-2xl: 32px;
+  --fs-3xl: 48px;
+
+  /* ---------- 圆角 ---------- */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+
+  /* ---------- 动画 ---------- */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 200ms;
+  --duration-base: 400ms;
+
+  /* ---------- 布局尺寸 ---------- */
+  --sidebar-width: 240px;
+  --topbar-height: 64px;
+  --statusbar-height: 32px;
+}
