@@ -1,20 +1,47 @@
-node_modules/
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.matplotlib/
+runs/
+
+# Model weights
+*.pt
+*.pth
+*.onnx
+
+# Data
+leftImg8bit/
+
+# Ultralytics settings
+ultralytics_settings.yaml
+settings.yaml
+
+# Test files
+test_*.py
+check_*.py
+find_*.py
+fix_*.py
+read_*.py
+patch_*.py
+inspect_*.py
+train_yolo.py
+
+# Logs
 *.log
+
+# Node modules
+node_modules/
+
+# Temp
+temp/
+.temp/
+
+# OS
 .DS_Store
-.env
-backend/data/*.json
-!backend/data/mock.js
-.vscode/
-.idea/
-dist/
-*.tmp
-mysql-data/
-*.docx
-*.doc
-*.pdf
-*.exe
-*.zip
-*.rar
-*.tar
-*.gz
-.DJI-Cloud-API-Demo/
+Thumbs.db
+
+# Chinese temp
+"\350\275\257\344\273\266\345\274\200\345\217\221.txt"

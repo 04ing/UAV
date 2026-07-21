@@ -1,5 +1,8 @@
 require('dotenv').config();
 
+process.env.ULTRALYTICS_SETTINGS = 'e:\\无人机智能巡检系统\\ultralytics_settings.yaml';
+process.env.HOME = 'e:\\无人机智能巡检系统';
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
