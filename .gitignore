@@ -43,5 +43,18 @@ temp/
 .DS_Store
 Thumbs.db
 
+# IDE
+.vscode/
+
+# Environment
+.env
+
+# MySQL data
+mysql-data/
+
+# Documents
+*.docx
+*.txt
+
 # Chinese temp
 "\350\275\257\344\273\266\345\274\200\345\217\221.txt"
