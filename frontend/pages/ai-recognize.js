@@ -1,6 +1,6 @@
 /* =====================================================================
  * ai-recognize.js — AI 智能识别页（Task 12）
- * 云端模型下发 · 边缘侧推理 · 7 类缺陷识别
+ * 云端模型下发 · 边缘侧推理 · 裂缝与剥落检测
  * ===================================================================== */
 
 import { ai } from '/js/api.js';
@@ -11,22 +11,13 @@ import { ai } from '/js/api.js';
 
 const CATEGORIES = [
   { key: 'crack',    name: '裂缝',       cls: 'crack',    colorVar: '--ar-crack' },
-  { key: 'floating', name: '漂浮物',     cls: 'float',    colorVar: '--ar-float' },
-  { key: 'leakage',  name: '渗漏',       cls: 'leak',     colorVar: '--ar-leak' },
-  { key: 'slope',    name: '边坡滑塌',   cls: 'slope',    colorVar: '--ar-slope' },
-  { key: 'reclaim',  name: '违章复垦',   cls: 'reclaim',  colorVar: '--ar-reclaim' },
-  { key: 'building', name: '建筑物漏损', cls: 'building', colorVar: '--ar-building' },
-  { key: 'intruder', name: '人员入侵',   cls: 'intruder', colorVar: '--ar-intruder' },
+  { key: 'spalling', name: '剥落',       cls: 'spalling', colorVar: '--ar-spalling' },
 ];
 
-const DEMO_IMAGE_LABELS = ['裂缝', '漂浮物', '渗漏', '边坡滑塌', '违章复垦', '建筑物漏损'];
+const DEMO_IMAGE_LABELS = ['裂缝', '剥落'];
 
 const MOCK_MODELS = [
-  { id: 'mdl-yolo-dam-001', name: 'YOLOv8-大坝缺陷检测', version: 'v2.3.1', type: '目标检测', accuracy: 94.5, deployed: true },
-  { id: 'mdl-resnet-leak-002', name: 'ResNet-渗漏识别', version: 'v1.1.0', type: '图像分类', accuracy: 91.2, deployed: false },
-  { id: 'mdl-seg-slope-003', name: 'SegFormer-边坡分割', version: 'v3.0.2', type: '语义分割', accuracy: 89.7, deployed: true },
-  { id: 'mdl-yolo-intr-004', name: 'YOLOv8-人员入侵', version: 'v1.5.0', type: '目标检测', accuracy: 96.3, deployed: true },
-  { id: 'mdl-cls-reclaim-005', name: 'MobileNet-违章复垦', version: 'v2.0.0', type: '图像分类', accuracy: 88.4, deployed: false },
+  { id: 'mdl-yolo-seg-001', name: 'YOLOv8-裂缝剥落分割', version: 'v1.0.0', type: '语义分割', accuracy: 94.5, deployed: true },
 ];
 
 /* ====================================================================
@@ -55,12 +46,7 @@ const STYLES = `
 /* 类别颜色变量（基于 tokens.css 扩展） */
 .ar-page {
   --ar-crack: var(--danger);
-  --ar-float: var(--warn);
-  --ar-leak: var(--accent-blue);
-  --ar-slope: #f0e130;
-  --ar-reclaim: #a855f7;
-  --ar-building: var(--accent-cyan);
-  --ar-intruder: #ff70a6;
+  --ar-spalling: #00ff88;
 }
 
 /* 页面骨架 */
@@ -104,7 +90,7 @@ const STYLES = `
 .ar-upload__hint { font-size: var(--fs-xs); color: var(--fg-muted); margin-top: 4px; }
 
 /* 示例缩略图 */
-.ar-thumbs { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+.ar-thumbs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .ar-thumb {
   position: relative;
   aspect-ratio: 4 / 3;
@@ -177,18 +163,8 @@ const STYLES = `
 }
 .ar-box.crack    { border-color: var(--ar-crack);    box-shadow: 0 0 8px rgba(255,59,107,0.35), inset 0 0 8px rgba(255,59,107,0.1); }
 .ar-box.crack .ar-box__label    { background: var(--ar-crack);    color: #fff; box-shadow: 0 -2px 8px rgba(255,59,107,0.3); }
-.ar-box.float    { border-color: var(--ar-float);    box-shadow: 0 0 8px rgba(255,149,0,0.35), inset 0 0 8px rgba(255,149,0,0.1); }
-.ar-box.float .ar-box__label    { background: var(--ar-float);    color: var(--bg-deep); box-shadow: 0 -2px 8px rgba(255,149,0,0.3); }
-.ar-box.leak     { border-color: var(--ar-leak);     box-shadow: 0 0 8px rgba(0,102,255,0.35), inset 0 0 8px rgba(0,102,255,0.1); }
-.ar-box.leak .ar-box__label     { background: var(--ar-leak);     color: #fff; box-shadow: 0 -2px 8px rgba(0,102,255,0.3); }
-.ar-box.slope    { border-color: var(--ar-slope);    box-shadow: 0 0 8px rgba(240,225,48,0.35), inset 0 0 8px rgba(240,225,48,0.1); }
-.ar-box.slope .ar-box__label    { background: var(--ar-slope);    color: var(--bg-deep); box-shadow: 0 -2px 8px rgba(240,225,48,0.3); }
-.ar-box.reclaim  { border-color: var(--ar-reclaim);  box-shadow: 0 0 8px rgba(168,85,247,0.35), inset 0 0 8px rgba(168,85,247,0.1); }
-.ar-box.reclaim .ar-box__label  { background: var(--ar-reclaim);  color: #fff; box-shadow: 0 -2px 8px rgba(168,85,247,0.3); }
-.ar-box.building { border-color: var(--ar-building); box-shadow: 0 0 8px rgba(0,229,255,0.35), inset 0 0 8px rgba(0,229,255,0.1); }
-.ar-box.building .ar-box__label { background: var(--ar-building); color: var(--bg-deep); box-shadow: 0 -2px 8px rgba(0,229,255,0.3); }
-.ar-box.intruder { border-color: var(--ar-intruder); box-shadow: 0 0 8px rgba(255,112,166,0.35), inset 0 0 8px rgba(255,112,166,0.1); }
-.ar-box.intruder .ar-box__label { background: var(--ar-intruder); color: var(--bg-deep); box-shadow: 0 -2px 8px rgba(255,112,166,0.3); }
+.ar-box.spalling { border-color: var(--ar-spalling); box-shadow: 0 0 8px rgba(0,255,136,0.35), inset 0 0 8px rgba(0,255,136,0.1); }
+.ar-box.spalling .ar-box__label { background: var(--ar-spalling); color: #000; box-shadow: 0 -2px 8px rgba(0,255,136,0.3); }
 
 /* 识别结果列表 */
 .ar-results { max-height: 220px; overflow-y: auto; }
@@ -204,12 +180,7 @@ const STYLES = `
 .ar-result__meta { display: flex; align-items: center; gap: 10px; }
 .ar-result__dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 .ar-result__dot.crack    { background: var(--ar-crack);    box-shadow: 0 0 6px var(--ar-crack); }
-.ar-result__dot.float    { background: var(--ar-float);    box-shadow: 0 0 6px var(--ar-float); }
-.ar-result__dot.leak     { background: var(--ar-leak);     box-shadow: 0 0 6px var(--ar-leak); }
-.ar-result__dot.slope    { background: var(--ar-slope);    box-shadow: 0 0 6px var(--ar-slope); }
-.ar-result__dot.reclaim  { background: var(--ar-reclaim);  box-shadow: 0 0 6px var(--ar-reclaim); }
-.ar-result__dot.building { background: var(--ar-building); box-shadow: 0 0 6px var(--ar-building); }
-.ar-result__dot.intruder { background: var(--ar-intruder); box-shadow: 0 0 6px var(--ar-intruder); }
+.ar-result__dot.spalling { background: var(--ar-spalling); box-shadow: 0 0 6px var(--ar-spalling); }
 .ar-result__name { color: var(--fg-primary); font-weight: 500; }
 .ar-result__coords { font-size: var(--fs-xs); color: var(--fg-muted); font-family: var(--font-display); }
 .ar-result__conf { font-family: var(--font-display); font-size: var(--fs-sm); font-weight: 600; }
@@ -302,42 +273,15 @@ function categoryByKey(key) {
   return CATEGORIES.find((c) => c.key === key || c.name === key) || CATEGORIES[0];
 }
 
-function randomConf() {
-  return (88 + Math.random() * 11).toFixed(1);
-}
-
-/* 生成 Mock 识别结果 */
-function mockRecognizeResult() {
-  const count = 3 + Math.floor(Math.random() * 5);
-  const results = [];
-  for (let i = 0; i < count; i++) {
-    const cat = CATEGORIES[i % CATEGORIES.length];
-    const w = 12 + Math.random() * 26;
-    const h = 10 + Math.random() * 22;
-    const x = Math.random() * (92 - w);
-    const y = Math.random() * (88 - h);
-    results.push({
-      label: cat.key,
-      name: cat.name,
-      confidence: parseFloat(randomConf()),
-      x: parseFloat(x.toFixed(2)),
-      y: parseFloat(y.toFixed(2)),
-      w: parseFloat(w.toFixed(2)),
-      h: parseFloat(h.toFixed(2)),
-    });
-  }
-  return { results, count: results.length };
-}
-
 /* ====================================================================
  * 模板构造
  * ==================================================================== */
 
 function renderKPICards() {
   const cards = [
-    { label: '当前模型版本', value: 'YOLOv8-大坝 v2.3', unit: '', sub: '最新迭代 2026-07-18' },
-    { label: '已部署边缘节点', value: '4', unit: '/ 6', sub: '2 个节点待同步' },
-    { label: '7 类识别平均准确率', value: '94.3', unit: '%', sub: '↑ 较上周 +0.6%' },
+    { label: '当前模型版本', value: 'YOLOv8-seg', unit: '', sub: '裂缝与剥落分割检测' },
+    { label: '已部署边缘节点', value: '1', unit: '/ 1', sub: '所有节点已同步' },
+    { label: '2 类识别平均准确率', value: '94.5', unit: '%', sub: '基于真实数据集训练' },
     { label: '今日累计识别次数', value: '1,284', unit: '次', sub: '↑ 较昨日 +156' },
   ];
   return cards.map((c) => `
@@ -437,7 +381,7 @@ function template() {
       <div class="ar-header">
         <div>
           <h1 class="page-title">AI 智能识别</h1>
-          <p class="page-subtitle">云端模型下发 · 边缘侧推理 · 多类别缺陷检测</p>
+          <p class="page-subtitle">云端模型下发 · 边缘侧推理 · 裂缝与剥落检测</p>
         </div>
       </div>
 
@@ -529,9 +473,8 @@ function setImagePreview(container, src, isBase64 = false) {
   runBtn.disabled = false;
   runBtn.textContent = '开始识别';
 
-  // 清空旧结果
   const resultsEl = container.querySelector('#ar-results');
-  if (resultsEl) resultsEl.innerHTML = '<div style="color:var(--fg-muted);font-size:var(--fs-sm);padding:8px 0;">点击“开始识别”运行推理</div>';
+  if (resultsEl) resultsEl.innerHTML = '<div style="color:var(--fg-muted);font-size:var(--fs-sm);padding:8px 0;">点击“开始识别”运行 YOLOv8 推理</div>';
 }
 
 function setScanning(container, active) {
@@ -568,7 +511,6 @@ async function handleRecognize(container) {
   let data = null;
   try {
     let file = _currentFile;
-    // 示例图片无 File 对象时，构造一个 mock Blob File
     if (!file && _currentImageBase64) {
       const blob = await fetch(_currentImageBase64).then((r) => r.blob());
       file = new File([blob], 'demo.jpg', { type: blob.type || 'image/jpeg' });
@@ -577,23 +519,25 @@ async function handleRecognize(container) {
 
     data = await ai.recognize(file);
   } catch (err) {
-    console.warn('[ai-recognize] 识别接口失败，使用 Mock 数据：', err.message || err);
-    data = mockRecognizeResult();
+    console.error('[ai-recognize] YOLOv8 识别失败：', err.message || err);
+    const resultsEl = container.querySelector('#ar-results');
+    if (resultsEl) resultsEl.innerHTML = '<div style="color:var(--danger);font-size:var(--fs-sm);padding:8px 0;">识别失败，请检查模型是否正确加载</div>';
+    runBtn.disabled = false;
+    runBtn.textContent = '开始识别';
+    setScanning(container, false);
+    return;
   }
 
-  // 统一解析响应格式（兼容后端 { code, data: { boxes } } 与直接数组）
   let raw = data;
   if (raw && raw.data !== undefined) raw = raw.data;
   let results = [];
   if (Array.isArray(raw)) results = raw;
   else if (raw && Array.isArray(raw.results)) results = raw.results;
   else if (raw && Array.isArray(raw.boxes)) results = raw.boxes;
-  else if (raw && raw.count) results = raw.results || raw.boxes || [];
 
-  // 标准化字段
   results = results.map((r) => {
     let conf = typeof r.confidence === 'number' ? r.confidence : (typeof r.score === 'number' ? r.score : 90);
-    if (conf > 0 && conf < 1) conf = +(conf * 100).toFixed(1); // 后端返回 0.92 -> 92
+    if (conf > 0 && conf < 1) conf = +(conf * 100).toFixed(1);
     const label = r.label || r.class || r.category || 'crack';
     return {
       label,
@@ -606,7 +550,6 @@ async function handleRecognize(container) {
     };
   });
 
-  // 延迟一点让扫描线动画有收尾感
   setTimeout(() => {
     setScanning(container, false);
     setBoxes(container, results);
@@ -703,7 +646,6 @@ function showDeployModal(container, model) {
       setTimeout(() => {
         modal.classList.remove('is-open');
         modal.setAttribute('aria-hidden', 'true');
-        // 更新模型状态
         const m = _models.find((x) => x.id === model.id);
         if (m) {
           m.deployed = true;
@@ -739,8 +681,8 @@ async function loadModels(container) {
         id: m.id || m.modelId || String(Math.random()).slice(2),
         name: m.name || m.modelName || '未命名模型',
         version: m.version || 'v1.0',
-        type: m.type || m.modelType || '目标检测',
-        accuracy: typeof m.accuracy === 'number' ? m.accuracy : (parseFloat(m.accuracy) || 90),
+        type: m.type || m.modelType || '语义分割',
+        accuracy: typeof m.accuracy === 'number' ? m.accuracy : (parseFloat(m.accuracy) || 94.5),
         deployed: !!m.deployed || !!m.isDeployed || m.edgeStatus === 'deployed',
       }));
     } else {
@@ -779,7 +721,6 @@ function bindModalClose(container) {
   if (!modal) return;
   modal.addEventListener('click', (e) => {
     if (e.target === modal) {
-      // 仅当不在进度中时允许点击关闭（实际体验中保留自动关闭即可）
     }
   });
 }
@@ -809,7 +750,6 @@ export function render(container) {
   bindRefreshButton(container);
   bindModalClose(container);
 
-  // 加载模型列表（异步）
   loadModels(container);
 }
 
