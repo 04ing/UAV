@@ -1,0 +1,6 @@
+path: e:\无人机智能巡检系统\leftImg8bit
+train: train
+val: train
+
+nc: 2
+names: ['裂缝', '剥落']
