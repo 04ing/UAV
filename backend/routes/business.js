@@ -1,30 +1,23 @@
-// Task 5：业务工单 API
-// 包含 /api/inspection-plans 与 /api/work-orders 两类路由
-
 const express = require('express');
-const mock = require('../data/mock');
+const DataStore = require('../data/dataStore');
 const { success, error } = require('../utils/response');
 
-// 内存缓存（Mock 写操作持久化）
-const plansCache = mock.getInspectionPlans();
-const workOrdersCache = mock.getWorkOrders();
-
-// ---------- 巡检计划路由 ----------
 const plansRouter = express.Router();
 
-// GET /api/inspection-plans
 plansRouter.get('/', (req, res) => {
-  success(res, plansCache, '获取巡检计划列表成功');
+  const plans = DataStore.inspectionPlans.getAll();
+  success(res, plans, '获取巡检计划列表成功');
 });
 
-// POST /api/inspection-plans —— 创建计划
 plansRouter.post('/', (req, res) => {
   const { name, droneId, route, frequency, startTime } = req.body || {};
   if (!name || !droneId) {
     return error(res, '参数不合法：name、droneId 必填', 400);
   }
+  
+  const plans = DataStore.inspectionPlans.getAll();
   const newPlan = {
-    id: `PLAN-${String(plansCache.length + 1).padStart(3, '0')}`,
+    id: `PLAN-${String(plans.length + 1).padStart(3, '0')}`,
     name,
     droneId,
     route: Array.isArray(route) ? route : [],
@@ -32,40 +25,86 @@ plansRouter.post('/', (req, res) => {
     startTime: startTime || new Date().toISOString(),
     status: 'pending'
   };
-  plansCache.push(newPlan);
+
+  DataStore.inspectionPlans.add(newPlan);
   success(res, newPlan, '巡检计划创建成功');
 });
 
-// ---------- 工单路由 ----------
+plansRouter.put('/:id', (req, res) => {
+  const { status } = req.body || {};
+  const plan = DataStore.inspectionPlans.getById(req.params.id);
+  
+  if (!plan) {
+    return error(res, `未找到巡检计划: ${req.params.id}`, 404);
+  }
+
+  if (status) {
+    plan.status = status;
+    plan.updatedAt = new Date().toISOString();
+    DataStore.inspectionPlans.update(req.params.id, plan);
+  }
+
+  success(res, plan, '巡检计划更新成功');
+});
+
+plansRouter.delete('/:id', (req, res) => {
+  const removed = DataStore.inspectionPlans.delete(req.params.id);
+  if (!removed) {
+    return error(res, `未找到巡检计划: ${req.params.id}`, 404);
+  }
+  success(res, removed, '巡检计划已删除');
+});
+
 const workOrdersRouter = express.Router();
 
-// 工单状态流转：pending → processing → review → closed
 const STATUS_FLOW = ['pending', 'processing', 'review', 'closed'];
 
-// GET /api/work-orders —— 支持 ?status= 过滤
 workOrdersRouter.get('/', (req, res) => {
   const { status } = req.query;
-  let list = workOrdersCache;
+  let list = DataStore.workOrders.getAll();
+  
   if (status) {
-    list = workOrdersCache.filter((w) => w.status === status);
+    list = list.filter((w) => w.status === status);
   }
+  
   success(res, list, '获取工单列表成功');
 });
 
-// PUT /api/work-orders/:id —— 更新工单状态
+workOrdersRouter.post('/', (req, res) => {
+  const { alarmId, title, assignee, description } = req.body || {};
+  
+  if (!title) {
+    return error(res, '参数不合法：title 必填', 400);
+  }
+  
+  const orders = DataStore.workOrders.getAll();
+  const newOrder = {
+    id: `WO-${String(orders.length + 1).padStart(3, '0')}`,
+    alarmId: alarmId || '-',
+    title,
+    status: 'pending',
+    assignee: assignee || '-',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    description: description || ''
+  };
+
+  DataStore.workOrders.add(newOrder);
+  success(res, newOrder, '工单创建成功');
+});
+
 workOrdersRouter.put('/:id', (req, res) => {
-  const wo = workOrdersCache.find((w) => w.id === req.params.id);
+  const wo = DataStore.workOrders.getById(req.params.id);
   if (!wo) {
     return error(res, `未找到工单: ${req.params.id}`, 404);
   }
+  
   const { status, assignee, opinion } = req.body || {};
 
   if (status) {
-    // 校验状态合法性
     if (!STATUS_FLOW.includes(status)) {
       return error(res, `非法状态: ${status}，合法值: ${STATUS_FLOW.join(', ')}`, 400);
     }
-    // 校验状态是否可以流转到目标状态（同状态或向前一步）
     const currentIdx = STATUS_FLOW.indexOf(wo.status);
     const targetIdx = STATUS_FLOW.indexOf(status);
     if (targetIdx < currentIdx) {
@@ -82,7 +121,97 @@ workOrdersRouter.put('/:id', (req, res) => {
   }
   wo.updatedAt = new Date().toISOString();
 
+  DataStore.workOrders.update(req.params.id, wo);
   success(res, wo, '工单更新成功');
 });
 
-module.exports = { plansRouter, workOrdersRouter };
+workOrdersRouter.delete('/:id', (req, res) => {
+  const removed = DataStore.workOrders.delete(req.params.id);
+  if (!removed) {
+    return error(res, `未找到工单: ${req.params.id}`, 404);
+  }
+  success(res, removed, '工单已删除');
+});
+
+const alarmsRouter = express.Router();
+
+alarmsRouter.get('/', (req, res) => {
+  const { status, severity, type } = req.query;
+  let list = DataStore.alarms.getAll();
+  
+  if (status) {
+    list = list.filter((a) => a.status === status);
+  }
+  if (severity) {
+    list = list.filter((a) => a.severity === severity);
+  }
+  if (type) {
+    list = list.filter((a) => a.type === type);
+  }
+  
+  success(res, list, '获取告警列表成功');
+});
+
+alarmsRouter.post('/upload', (req, res) => {
+  const { alarms } = req.body || {};
+  
+  if (!Array.isArray(alarms) || alarms.length === 0) {
+    return error(res, '参数不合法：alarms 必须是数组且至少包含一个告警数据', 400);
+  }
+
+  const uploaded = [];
+
+  for (const alarmData of alarms) {
+    const { type, severity, droneId, lat, lng, imageBase64, description } = alarmData;
+    
+    if (!type || !droneId || lat === undefined || lng === undefined) {
+      continue;
+    }
+
+    const alarms = DataStore.alarms.getAll();
+    const newAlarm = {
+      id: `ALARM-${String(alarms.length + 1).padStart(3, '0')}`,
+      type,
+      severity: severity || 'medium',
+      droneId,
+      lat,
+      lng,
+      timestamp: new Date().toISOString(),
+      status: 'pending',
+      imageBase64: imageBase64 || null,
+      description: description || ''
+    };
+
+    DataStore.alarms.add(newAlarm);
+    uploaded.push(newAlarm.id);
+  }
+
+  success(res, { uploaded, total: uploaded.length }, 
+    `成功上传 ${uploaded.length} 条告警数据`);
+});
+
+alarmsRouter.put('/:id', (req, res) => {
+  const { status } = req.body || {};
+  const alarm = DataStore.alarms.getById(req.params.id);
+  
+  if (!alarm) {
+    return error(res, `未找到告警: ${req.params.id}`, 404);
+  }
+
+  if (status) {
+    alarm.status = status;
+    DataStore.alarms.update(req.params.id, alarm);
+  }
+
+  success(res, alarm, '告警状态更新成功');
+});
+
+alarmsRouter.delete('/:id', (req, res) => {
+  const removed = DataStore.alarms.delete(req.params.id);
+  if (!removed) {
+    return error(res, `未找到告警: ${req.params.id}`, 404);
+  }
+  success(res, removed, '告警已删除');
+});
+
+module.exports = { plansRouter, workOrdersRouter, alarmsRouter };

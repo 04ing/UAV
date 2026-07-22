@@ -11,13 +11,12 @@ const { WebSocketServer } = require('ws');
 
 const { logger } = require('./middleware/logger');
 const { requireAuth } = require('./middleware/auth');
-const { getAlarms } = require('./data/mock');
-const { isDjiEnabled } = require('./services/dji-cloud');
-const djiMqtt = require('./services/dji-mqtt');
+const DataStore = require('./data/dataStore');
+const mock = require('./data/mock');
 
 const { dronesRouter, geoFencesRouter } = require('./routes/drones');
 const aiRouter = require('./routes/ai');
-const { plansRouter, workOrdersRouter } = require('./routes/business');
+const { plansRouter, workOrdersRouter, alarmsRouter } = require('./routes/business');
 const { authRouter, auditLogsRouter } = require('./routes/ops');
 const metaRouter = require('./routes/meta');
 
@@ -40,6 +39,7 @@ app.use('/api/geo-fences', geoFencesRouter);
 app.use('/api/ai', aiRouter);
 app.use('/api/inspection-plans', plansRouter);
 app.use('/api/work-orders', workOrdersRouter);
+app.use('/api/alarms', alarmsRouter);
 app.use('/api/audit-logs', auditLogsRouter);
 app.use('/api/meta', metaRouter);
 
@@ -76,16 +76,17 @@ wssVideo.on('connection', (ws) => {
 const wssAlarm = new WebSocketServer({ noServer: true });
 wssAlarm.on('connection', (ws) => {
   console.log('[WS] alarm client connected');
-  const alarms = getAlarms();
   const interval = setInterval(() => {
     if (ws.readyState !== ws.OPEN) return;
+    const alarms = DataStore.alarms.getAll();
+    if (alarms.length === 0) return;
     const alarm = alarms[Math.floor(Math.random() * alarms.length)];
     ws.send(JSON.stringify({
       type: 'alarm',
       data: alarm,
       timestamp: Date.now()
     }));
-  }, 1000);
+  }, 5000);
   ws.on('close', () => clearInterval(interval));
 });
 
@@ -102,23 +103,15 @@ server.on('upgrade', (req, socket, head) => {
   }
 });
 
-async function initDjiServices() {
-  if (isDjiEnabled()) {
-    console.log('[DJI] DJI Cloud API is enabled, connecting to MQTT...');
-    await djiMqtt.connect();
-  } else {
-    console.log('[DJI] DJI Cloud API is not enabled, using Mock data. Set DJI_CLOUD_ENABLED=true and configure credentials in .env to enable.');
-  }
-}
+DataStore.initFromMock(mock);
 
-server.listen(PORT, async () => {
+server.listen(PORT, () => {
   console.log('Server running at http://localhost:3000');
-  await initDjiServices();
+  console.log('[DataStore] 数据存储已初始化，使用文件系统持久化存储');
 });
 
 function shutdown(signal) {
   console.log(`\n[${signal}] shutting down...`);
-  djiMqtt.disconnect();
   wssVideo.clients.forEach((c) => c.close());
   wssAlarm.clients.forEach((c) => c.close());
   server.close(() => process.exit(0));

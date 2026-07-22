@@ -1,34 +1,37 @@
-// Task 6：运维与日志 API
-// 包含 /api/auth 与 /api/audit-logs 两类路由
-
 const express = require('express');
-const mock = require('../data/mock');
+const DataStore = require('../data/dataStore');
 const { success, error } = require('../utils/response');
 const { signToken } = require('../middleware/auth');
 
-const usersCache = mock.getUsers();
-const auditLogsCache = mock.getAuditLogs();
-
-// ---------- 鉴权路由 ----------
 const authRouter = express.Router();
 
-// POST /api/auth/login —— 登录
 authRouter.post('/login', (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) {
     return error(res, '用户名和密码必填', 400);
   }
-  const user = usersCache.find((u) => u.username === username && u.password === password);
-  if (!user) {
+  
+  const user = DataStore.users.getByUsername(username);
+  if (!user || user.password !== password) {
     return error(res, '用户名或密码错误', 401);
   }
-  // 签发 token，仅包含非敏感字段
+  
   const token = signToken({
     id: user.id,
     username: user.username,
     role: user.role,
     name: user.name
   });
+  
+  DataStore.auditLogs.add({
+    id: `LOG-${String(Date.now()).slice(-6)}`,
+    user: user.username,
+    action: 'login',
+    target: '-',
+    ip: req.ip || '-',
+    timestamp: new Date().toISOString()
+  });
+
   success(res, {
     token,
     user: {
@@ -40,19 +43,65 @@ authRouter.post('/login', (req, res) => {
   }, '登录成功');
 });
 
-// GET /api/auth/me —— 当前用户信息（需 requireAuth）
 authRouter.get('/me', (req, res) => {
-  // requireAuth 已校验 token 并将解码后的 payload 挂到 req.user
   success(res, req.user, '获取当前用户信息成功');
 });
 
-// ---------- 审计日志路由 ----------
+authRouter.post('/logout', (req, res) => {
+  if (req.user && req.user.username) {
+    DataStore.auditLogs.add({
+      id: `LOG-${String(Date.now()).slice(-6)}`,
+      user: req.user.username,
+      action: 'logout',
+      target: '-',
+      ip: req.ip || '-',
+      timestamp: new Date().toISOString()
+    });
+  }
+  success(res, {}, '退出成功');
+});
+
+authRouter.post('/users', (req, res) => {
+  const { username, password, role, name } = req.body || {};
+  
+  if (!username || !password || !role) {
+    return error(res, '参数不合法：username、password、role 必填', 400);
+  }
+  
+  if (DataStore.users.getByUsername(username)) {
+    return error(res, '用户名已存在', 400);
+  }
+  
+  const users = DataStore.users.getAll();
+  const newUser = {
+    id: `USER-${String(users.length + 1).padStart(3, '0')}`,
+    username,
+    password,
+    role: role || 'viewer',
+    name: name || username
+  };
+  
+  DataStore.users.add(newUser);
+  
+  if (req.user && req.user.username) {
+    DataStore.auditLogs.add({
+      id: `LOG-${String(Date.now()).slice(-6)}`,
+      user: req.user.username,
+      action: 'create_user',
+      target: newUser.id,
+      ip: req.ip || '-',
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  success(res, newUser, '用户创建成功');
+});
+
 const auditLogsRouter = express.Router();
 
-// GET /api/audit-logs —— 支持 ?keyword=、?startDate=、?endDate= 过滤
 auditLogsRouter.get('/', (req, res) => {
-  const { keyword, startDate, endDate } = req.query;
-  let list = auditLogsCache;
+  const { keyword, startDate, endDate, page, pageSize } = req.query;
+  let list = DataStore.auditLogs.getAll();
 
   if (keyword) {
     const kw = String(keyword).toLowerCase();
@@ -80,7 +129,18 @@ auditLogsRouter.get('/', (req, res) => {
     }
   }
 
-  success(res, list, '获取审计日志成功');
+  const total = list.length;
+  const currentPage = parseInt(page) || 1;
+  const size = parseInt(pageSize) || 20;
+  const startIdx = (currentPage - 1) * size;
+  const paginated = list.slice(startIdx, startIdx + size);
+
+  success(res, {
+    total,
+    page: currentPage,
+    pageSize: size,
+    items: paginated
+  }, '获取审计日志成功');
 });
 
 module.exports = { authRouter, auditLogsRouter };
