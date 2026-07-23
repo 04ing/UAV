@@ -17,49 +17,9 @@ let alarmState = [];
 let alarmIdSet = new Set();
 
 /* =====================================================================
- * 兜底数据
- * ===================================================================== */
-const FALLBACK = {
-  drones: [
-    { id: 'DRONE-001', model: 'DJI M350',        battery: 85, signal: '强', status: 'inspecting', lat: 30.6012, lng: 114.3025 },
-    { id: 'DRONE-002', model: 'DJI M30T',        battery: 72, signal: '强', status: 'idle',       lat: 30.5980, lng: 114.2980 },
-    { id: 'DRONE-003', model: 'DJI Matrice 300', battery: 45, signal: '中', status: 'returning',  lat: 30.6050, lng: 114.3100 },
-    { id: 'DRONE-004', model: 'DJI M350',        battery: 90, signal: '强', status: 'idle',       lat: 30.5970, lng: 114.3050 },
-    { id: 'DRONE-005', model: 'DJI M30T',        battery: 30, signal: '弱', status: 'returning',  lat: 30.6080, lng: 114.2970 },
-    { id: 'DRONE-006', model: 'DJI Matrice 300', battery: 65, signal: '中', status: 'inspecting', lat: 30.6020, lng: 114.3150 },
-    { id: 'DRONE-007', model: 'DJI M350',        battery: 0,  signal: '弱', status: 'offline',    lat: 30.5990, lng: 114.3000 }
-  ],
-  alarms: (() => {
-    const now = Date.now();
-    return [
-      { id: 'ALARM-001', type: '裂缝',       severity: 'high',   droneId: 'DRONE-001', lat: 30.6015, lng: 114.3028, timestamp: now - 3600000, status: 'pending'    },
-      { id: 'ALARM-002', type: '漂浮物',     severity: 'medium', droneId: 'DRONE-002', lat: 30.5985, lng: 114.2985, timestamp: now - 3300000, status: 'processing' },
-      { id: 'ALARM-003', type: '渗漏',       severity: 'high',   droneId: 'DRONE-003', lat: 30.6055, lng: 114.3105, timestamp: now - 3000000, status: 'pending'    },
-      { id: 'ALARM-004', type: '边坡滑塌',   severity: 'high',   droneId: 'DRONE-006', lat: 30.6025, lng: 114.3155, timestamp: now - 2700000, status: 'closed'     },
-      { id: 'ALARM-005', type: '违章复垦',   severity: 'medium', droneId: 'DRONE-001', lat: 30.6018, lng: 114.3030, timestamp: now - 2400000, status: 'pending'    },
-      { id: 'ALARM-006', type: '建筑物漏损', severity: 'low',    droneId: 'DRONE-002', lat: 30.5988, lng: 114.2990, timestamp: now - 2100000, status: 'closed'     },
-      { id: 'ALARM-007', type: '人员入侵',   severity: 'high',   droneId: 'DRONE-006', lat: 30.6028, lng: 114.3160, timestamp: now - 1800000, status: 'processing' },
-      { id: 'ALARM-008', type: '裂缝',       severity: 'medium', droneId: 'DRONE-003', lat: 30.6060, lng: 114.3110, timestamp: now - 1500000, status: 'pending'    },
-      { id: 'ALARM-009', type: '漂浮物',     severity: 'low',    droneId: 'DRONE-001', lat: 30.6020, lng: 114.3035, timestamp: now - 1200000, status: 'closed'     },
-      { id: 'ALARM-010', type: '渗漏',       severity: 'medium', droneId: 'DRONE-006', lat: 30.6030, lng: 114.3165, timestamp: now - 900000,  status: 'processing' }
-    ];
-  })(),
-  geoFences: [
-    { id: 'GEOFENCE-001', name: '大坝核心区', polygon: [{lat:30.6012,lng:114.3025},{lat:30.6050,lng:114.3050},{lat:30.6030,lng:114.3100},{lat:30.5990,lng:114.3070}], type: 'restricted' },
-    { id: 'GEOFENCE-002', name: '库区禁飞区', polygon: [{lat:30.5980,lng:114.2980},{lat:30.6020,lng:114.2990},{lat:30.6010,lng:114.3030},{lat:30.5970,lng:114.3010}], type: 'no-fly' },
-    { id: 'GEOFENCE-003', name: '管理区',     polygon: [{lat:30.5970,lng:114.3050},{lat:30.5990,lng:114.3060},{lat:30.5990,lng:114.3080},{lat:30.5970,lng:114.3070}], type: 'restricted' }
-  ],
-  routes: [
-    [[30.6012,114.3025],[30.6020,114.3050],[30.6010,114.3075],[30.6000,114.3050]],
-    [[30.5980,114.2980],[30.5990,114.3010],[30.5970,114.3030]],
-    [[30.6020,114.3150],[30.6030,114.3160],[30.6040,114.3170]]
-  ]
-};
-
-/* =====================================================================
  * 工具函数
  * ===================================================================== */
-function unwrap(res, fallback) {
+function unwrap(res, fallback = []) {
   if (Array.isArray(res)) return res;
   if (res && Array.isArray(res.data)) return res.data;
   if (res && Array.isArray(res.items)) return res.items;
@@ -971,14 +931,16 @@ export function render(container) {
   // 加载数据
   Promise.allSettled([
     drones.list(),
-    geoFences.list()
-  ]).then(([drRes, gfRes]) => {
-    const droneList = drRes.status === 'fulfilled' ? unwrap(drRes.value, FALLBACK.drones) : FALLBACK.drones;
-    const fenceList = gfRes.status === 'fulfilled' ? unwrap(gfRes.value, FALLBACK.geoFences) : FALLBACK.geoFences;
-    const routeList = FALLBACK.routes;
+    geoFences.list(),
+    fetch('/api/alarms', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json())
+  ]).then(([drRes, gfRes, aRes]) => {
+    const droneList = drRes.status === 'fulfilled' ? unwrap(drRes.value) : [];
+    const fenceList = gfRes.status === 'fulfilled' ? unwrap(gfRes.value) : [];
+    const routeList = droneList.length > 0 ? [{ droneId: droneList[0].id, path: droneList.map(d => ({ lat: d.lat, lng: d.lng })) }] : [];
 
     // 初始化告警状态（按时间倒序）
-    alarmState = [...FALLBACK.alarms].sort(
+    const alarmData = aRes.status === 'fulfilled' && aRes.value && aRes.value.data ? aRes.value.data : [];
+    alarmState = [...alarmData].sort(
       (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
     alarmState.forEach((a) => alarmIdSet.add(a.id));

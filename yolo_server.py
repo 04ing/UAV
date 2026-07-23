@@ -162,6 +162,17 @@ def detect_image(model, img):
         return {"code": 1, "msg": f"识别失败: {str(e)}\n{traceback.format_exc()}", "data": None}
 
 class YOLOHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == '/health':
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({"status": "healthy", "model": "YOLOv8-seg"}).encode('utf-8'))
+            return
+        
+        self.send_response(404)
+        self.end_headers()
+    
     def do_POST(self):
         try:
             content_length = int(self.headers['Content-Length'])

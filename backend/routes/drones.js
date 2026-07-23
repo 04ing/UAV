@@ -1,6 +1,7 @@
 const express = require('express');
 const { success, error } = require('../utils/response');
 const DataStore = require('../data/dataStore');
+const EventEmitter = require('../utils/eventEmitter');
 
 const dronesRouter = express.Router();
 
@@ -85,6 +86,11 @@ dronesRouter.post('/:id/telemetry', (req, res) => {
   if (!updated) {
     return error(res, `未找到无人机: ${req.params.id}`, 404);
   }
+
+  EventEmitter.emit('telemetry-update', {
+    droneId: req.params.id,
+    ...updates
+  });
 
   success(res, updated, '遥测数据更新成功');
 });

@@ -19,67 +19,10 @@ let alarmState = [];
 let alarmIdSet = new Set();
 
 /* =====================================================================
- * 兜底数据：API 返回占位 {code:0,msg:'pending',data:null} 时使用
- * 坐标基准：武汉附近某水库 (30.6°N, 114.3°E)，与 backend/data/mock.js 同步
- * ===================================================================== */
-const FALLBACK = {
-  drones: [
-    { id: 'DRONE-001', model: 'DJI M350',        battery: 85, signal: '强', status: 'inspecting', lat: 30.6012, lng: 114.3025 },
-    { id: 'DRONE-002', model: 'DJI M30T',        battery: 72, signal: '强', status: 'idle',       lat: 30.5980, lng: 114.2980 },
-    { id: 'DRONE-003', model: 'DJI Matrice 300', battery: 45, signal: '中', status: 'returning',  lat: 30.6050, lng: 114.3100 },
-    { id: 'DRONE-004', model: 'DJI M350',        battery: 90, signal: '强', status: 'idle',       lat: 30.5970, lng: 114.3050 },
-    { id: 'DRONE-005', model: 'DJI M30T',        battery: 30, signal: '弱', status: 'returning',  lat: 30.6080, lng: 114.2970 },
-    { id: 'DRONE-006', model: 'DJI Matrice 300', battery: 65, signal: '中', status: 'inspecting', lat: 30.6020, lng: 114.3150 },
-    { id: 'DRONE-007', model: 'DJI M350',        battery: 0,  signal: '弱', status: 'offline',    lat: 30.5990, lng: 114.3000 },
-    { id: 'DRONE-008', model: 'DJI M30T',        battery: 78, signal: '强', status: 'inspecting', lat: 30.6040, lng: 114.3080 }
-  ],
-  alarms: (() => {
-    const now = Date.now();
-    return [
-      { id: 'ALARM-001', type: '裂缝',       severity: 'high',   droneId: 'DRONE-001', lat: 30.6015, lng: 114.3028, timestamp: now - 3600000, status: 'pending'   },
-      { id: 'ALARM-002', type: '漂浮物',     severity: 'medium', droneId: 'DRONE-002', lat: 30.5985, lng: 114.2985, timestamp: now - 3300000, status: 'processing'},
-      { id: 'ALARM-003', type: '渗漏',       severity: 'high',   droneId: 'DRONE-003', lat: 30.6055, lng: 114.3105, timestamp: now - 3000000, status: 'pending'   },
-      { id: 'ALARM-004', type: '边坡滑塌',   severity: 'high',   droneId: 'DRONE-006', lat: 30.6025, lng: 114.3155, timestamp: now - 2700000, status: 'closed'    },
-      { id: 'ALARM-005', type: '违章复垦',   severity: 'medium', droneId: 'DRONE-001', lat: 30.6018, lng: 114.3030, timestamp: now - 2400000, status: 'pending'   },
-      { id: 'ALARM-006', type: '建筑物漏损', severity: 'low',    droneId: 'DRONE-002', lat: 30.5988, lng: 114.2990, timestamp: now - 2100000, status: 'closed'    },
-      { id: 'ALARM-007', type: '人员入侵',   severity: 'high',   droneId: 'DRONE-006', lat: 30.6028, lng: 114.3160, timestamp: now - 1800000, status: 'processing'},
-      { id: 'ALARM-008', type: '裂缝',       severity: 'medium', droneId: 'DRONE-003', lat: 30.6060, lng: 114.3110, timestamp: now - 1500000, status: 'pending'   }
-    ];
-  })(),
-  workOrders: [
-    { id: 'WO-001', status: 'pending' },
-    { id: 'WO-002', status: 'processing' },
-    { id: 'WO-003', status: 'review' },
-    { id: 'WO-004', status: 'closed' },
-    { id: 'WO-005', status: 'pending' },
-    { id: 'WO-006', status: 'closed' },
-    { id: 'WO-007', status: 'processing' },
-    { id: 'WO-008', status: 'review' }
-  ],
-  geoFences: [
-    { id: 'GEOFENCE-001', name: '大坝核心区', polygon: [{lat:30.6012,lng:114.3025},{lat:30.6050,lng:114.3050},{lat:30.6030,lng:114.3100},{lat:30.5990,lng:114.3070}], type: 'restricted' },
-    { id: 'GEOFENCE-002', name: '库区禁飞区', polygon: [{lat:30.5980,lng:114.2980},{lat:30.6020,lng:114.2990},{lat:30.6010,lng:114.3030},{lat:30.5970,lng:114.3010}], type: 'no-fly' },
-    { id: 'GEOFENCE-003', name: '管理区',     polygon: [{lat:30.5970,lng:114.3050},{lat:30.5990,lng:114.3060},{lat:30.5990,lng:114.3080},{lat:30.5970,lng:114.3070}], type: 'restricted' }
-  ],
-  aiModels: [
-    { id: 'MODEL-001', name: '裂缝识别模型',       accuracy: 96.5 },
-    { id: 'MODEL-002', name: '漂浮物检测模型',     accuracy: 94.2 },
-    { id: 'MODEL-003', name: '渗漏识别模型',       accuracy: 92.8 },
-    { id: 'MODEL-004', name: '人员入侵检测模型',   accuracy: 97.1 }
-  ],
-  routes: [
-    [[30.6012,114.3025],[30.6020,114.3050],[30.6010,114.3075],[30.6000,114.3050]],
-    [[30.5980,114.2980],[30.5990,114.3010],[30.5970,114.3030]],
-    [[30.6020,114.3150],[30.6030,114.3160],[30.6040,114.3170]]
-  ]
-};
-
-/* =====================================================================
  * 工具函数
  * ===================================================================== */
 
-/** 兼容多种 API 返回结构，提取数组 */
-function unwrap(res, fallback) {
+function unwrap(res, fallback = []) {
   if (Array.isArray(res)) return res;
   if (res && Array.isArray(res.data)) return res.data;
   if (res && Array.isArray(res.items)) return res.items;
@@ -88,19 +31,23 @@ function unwrap(res, fallback) {
 }
 
 async function loadAll() {
-  const [d, o, g, m] = await Promise.allSettled([
+  const [d, o, g, m, a] = await Promise.allSettled([
     drones.list(),
     orders.list(),
     geoFences.list(),
-    ai.models()
+    ai.models(),
+    fetch('/api/alarms', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json())
   ]);
+  
+  const droneData = d.status === 'fulfilled' ? unwrap(d.value) : [];
+  
   return {
-    drones:    d.status === 'fulfilled' ? unwrap(d.value, FALLBACK.drones)       : FALLBACK.drones,
-    orders:    o.status === 'fulfilled' ? unwrap(o.value, FALLBACK.workOrders)   : FALLBACK.workOrders,
-    geoFences: g.status === 'fulfilled' ? unwrap(g.value, FALLBACK.geoFences)   : FALLBACK.geoFences,
-    aiModels:  m.status === 'fulfilled' ? unwrap(m.value, FALLBACK.aiModels)    : FALLBACK.aiModels,
-    alarms:    FALLBACK.alarms,
-    routes:    FALLBACK.routes
+    drones:    droneData,
+    orders:    o.status === 'fulfilled' ? unwrap(o.value) : [],
+    geoFences: g.status === 'fulfilled' ? unwrap(g.value) : [],
+    aiModels:  m.status === 'fulfilled' ? unwrap(m.value) : [],
+    alarms:    a.status === 'fulfilled' && a.value && a.value.data ? a.value.data : [],
+    routes:    droneData.length > 0 ? [{ droneId: droneData[0].id, path: droneData.map(d => ({ lat: d.lat, lng: d.lng })) }] : []
   };
 }
 
@@ -1286,7 +1233,7 @@ export function render(container) {
     const avgAccuracy = data.aiModels.length
       ? data.aiModels.reduce((s, m) => s + (m.accuracy || 0), 0) / data.aiModels.length
       : 0;
-    const mileage = 156.8; // 模拟值
+    const mileage = data.orders.filter(o => o.status === 'closed').length * 5.2; // 基于已完成工单数估算
 
     // KPI 计数动画（从 0 缓动到目标值）
     animateCount(document.getElementById('kpi-online'),   onlineDrones,   { duration: 1200 });

@@ -1,0 +1,178 @@
+[
+  {
+    "id": "LOG-198210",
+    "user": "admin",
+    "action": "login",
+    "target": "-",
+    "ip": "::1",
+    "timestamp": "2026-07-22T08:33:18.210Z"
+  },
+  {
+    "id": "LOG-380278",
+    "user": "admin",
+    "action": "login",
+    "target": "-",
+    "ip": "::1",
+    "timestamp": "2026-07-22T05:49:40.279Z"
+  },
+  {
+    "id": "LOG-288971",
+    "user": "admin",
+    "action": "login",
+    "target": "-",
+    "ip": "::1",
+    "timestamp": "2026-07-22T05:48:08.971Z"
+  },
+  {
+    "id": "LOG-450750",
+    "user": "admin",
+    "action": "login",
+    "target": "-",
+    "ip": "::1",
+    "timestamp": "2026-07-22T04:44:10.750Z"
+  },
+  {
+    "id": "LOG-440378",
+    "user": "admin",
+    "action": "login",
+    "target": "-",
+    "ip": "::1",
+    "timestamp": "2026-07-22T04:44:00.378Z"
+  },
+  {
+    "id": "LOG-431660",
+    "user": "admin",
+    "action": "login",
+    "target": "-",
+    "ip": "::1",
+    "timestamp": "2026-07-22T04:43:51.660Z"
+  },
+  {
+    "id": "LOG-370791",
+    "user": "admin",
+    "action": "login",
+    "target": "-",
+    "ip": "::1",
+    "timestamp": "2026-07-22T01:56:10.791Z"
+  },
+  {
+    "id": "LOG-001",
+    "user": "admin",
+    "action": "login",
+    "target": "-",
+    "ip": "192.168.1.10",
+    "timestamp": "2026-07-20T08:00:00Z"
+  },
+  {
+    "id": "LOG-002",
+    "user": "admin",
+    "action": "create",
+    "target": "PLAN-001",
+    "ip": "192.168.1.10",
+    "timestamp": "2026-07-20T08:05:00Z"
+  },
+  {
+    "id": "LOG-003",
+    "user": "operator1",
+    "action": "login",
+    "target": "-",
+    "ip": "192.168.1.11",
+    "timestamp": "2026-07-20T08:10:00Z"
+  },
+  {
+    "id": "LOG-004",
+    "user": "operator1",
+    "action": "start_inspection",
+    "target": "PLAN-001",
+    "ip": "192.168.1.11",
+    "timestamp": "2026-07-20T08:15:00Z"
+  },
+  {
+    "id": "LOG-005",
+    "user": "operator1",
+    "action": "ack_alarm",
+    "target": "ALARM-001",
+    "ip": "192.168.1.11",
+    "timestamp": "2026-07-20T09:16:00Z"
+  },
+  {
+    "id": "LOG-006",
+    "user": "admin",
+    "action": "create_work_order",
+    "target": "WO-001",
+    "ip": "192.168.1.10",
+    "timestamp": "2026-07-20T09:20:00Z"
+  },
+  {
+    "id": "LOG-007",
+    "user": "operator1",
+    "action": "update_work_order",
+    "target": "WO-002",
+    "ip": "192.168.1.11",
+    "timestamp": "2026-07-20T09:30:00Z"
+  },
+  {
+    "id": "LOG-008",
+    "user": "viewer1",
+    "action": "login",
+    "target": "-",
+    "ip": "192.168.1.12",
+    "timestamp": "2026-07-20T09:35:00Z"
+  },
+  {
+    "id": "LOG-009",
+    "user": "viewer1",
+    "action": "view_alarm",
+    "target": "ALARM-004",
+    "ip": "192.168.1.12",
+    "timestamp": "2026-07-20T09:40:00Z"
+  },
+  {
+    "id": "LOG-010",
+    "user": "admin",
+    "action": "deploy_model",
+    "target": "MODEL-001",
+    "ip": "192.168.1.10",
+    "timestamp": "2026-07-20T09:45:00Z"
+  },
+  {
+    "id": "LOG-011",
+    "user": "operator1",
+    "action": "close_alarm",
+    "target": "ALARM-004",
+    "ip": "192.168.1.11",
+    "timestamp": "2026-07-20T10:00:00Z"
+  },
+  {
+    "id": "LOG-012",
+    "user": "admin",
+    "action": "update_geofence",
+    "target": "GEOFENCE-001",
+    "ip": "192.168.1.10",
+    "timestamp": "2026-07-20T10:05:00Z"
+  },
+  {
+    "id": "LOG-013",
+    "user": "operator1",
+    "action": "return_drone",
+    "target": "DRONE-003",
+    "ip": "192.168.1.11",
+    "timestamp": "2026-07-20T10:10:00Z"
+  },
+  {
+    "id": "LOG-014",
+    "user": "admin",
+    "action": "create_user",
+    "target": "USER-003",
+    "ip": "192.168.1.10",
+    "timestamp": "2026-07-20T10:15:00Z"
+  },
+  {
+    "id": "LOG-015",
+    "user": "viewer1",
+    "action": "logout",
+    "target": "-",
+    "ip": "192.168.1.12",
+    "timestamp": "2026-07-20T10:20:00Z"
+  }
+]

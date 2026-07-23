@@ -1,6 +1,7 @@
 const express = require('express');
 const DataStore = require('../data/dataStore');
 const { success, error } = require('../utils/response');
+const EventEmitter = require('../utils/eventEmitter');
 
 const plansRouter = express.Router();
 
@@ -184,6 +185,7 @@ alarmsRouter.post('/upload', (req, res) => {
 
     DataStore.alarms.add(newAlarm);
     uploaded.push(newAlarm.id);
+    EventEmitter.emit('new-alarm', newAlarm);
   }
 
   success(res, { uploaded, total: uploaded.length }, 

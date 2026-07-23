@@ -12,7 +12,7 @@ const { WebSocketServer } = require('ws');
 const { logger } = require('./middleware/logger');
 const { requireAuth } = require('./middleware/auth');
 const DataStore = require('./data/dataStore');
-const mock = require('./data/mock');
+const EventEmitter = require('./utils/eventEmitter');
 
 const { dronesRouter, geoFencesRouter } = require('./routes/drones');
 const aiRouter = require('./routes/ai');
@@ -55,39 +55,74 @@ app.get('*', (req, res, next) => {
   });
 });
 
+app.use((err, req, res, next) => {
+  console.error('[ERROR]', err.stack || err.message);
+  if (res.headersSent) {
+    return next(err);
+  }
+  res.status(err.status || 500).json({
+    code: -1,
+    msg: process.env.NODE_ENV === 'production' ? '服务器内部错误' : err.message,
+    data: null
+  });
+});
+
 const server = http.createServer(app);
 
 const wssVideo = new WebSocketServer({ noServer: true });
 wssVideo.on('connection', (ws) => {
   console.log('[WS] video client connected');
-  const interval = setInterval(() => {
-    if (ws.readyState !== ws.OPEN) return;
-    ws.send(JSON.stringify({
-      type: 'video_frame',
-      droneId: 'DRONE-001',
-      timestamp: Date.now(),
-      frameIndex: Math.floor(Math.random() * 100000),
-      dataUrl: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAg='
-    }));
-  }, 1000);
-  ws.on('close', () => clearInterval(interval));
+  ws.on('close', () => {
+    console.log('[WS] video client disconnected');
+  });
 });
 
 const wssAlarm = new WebSocketServer({ noServer: true });
 wssAlarm.on('connection', (ws) => {
   console.log('[WS] alarm client connected');
-  const interval = setInterval(() => {
-    if (ws.readyState !== ws.OPEN) return;
-    const alarms = DataStore.alarms.getAll();
-    if (alarms.length === 0) return;
-    const alarm = alarms[Math.floor(Math.random() * alarms.length)];
-    ws.send(JSON.stringify({
-      type: 'alarm',
-      data: alarm,
-      timestamp: Date.now()
-    }));
-  }, 5000);
-  ws.on('close', () => clearInterval(interval));
+  ws.on('close', () => {
+    console.log('[WS] alarm client disconnected');
+  });
+});
+
+const wssTelemetry = new WebSocketServer({ noServer: true });
+wssTelemetry.on('connection', (ws) => {
+  console.log('[WS] telemetry client connected');
+  ws.on('close', () => {
+    console.log('[WS] telemetry client disconnected');
+  });
+});
+
+EventEmitter.on('new-alarm', (alarm) => {
+  wssAlarm.clients.forEach((client) => {
+    if (client.readyState === client.OPEN) {
+      client.send(JSON.stringify({
+        type: 'alarm',
+        data: alarm,
+        timestamp: Date.now()
+      }));
+    }
+  });
+});
+
+EventEmitter.on('telemetry-update', (data) => {
+  wssTelemetry.clients.forEach((client) => {
+    if (client.readyState === client.OPEN) {
+      client.send(JSON.stringify({
+        type: 'telemetry',
+        data: data,
+        timestamp: Date.now()
+      }));
+    }
+  });
+});
+
+EventEmitter.on('video-frame', (data) => {
+  wssVideo.clients.forEach((client) => {
+    if (client.readyState === client.OPEN) {
+      client.send(JSON.stringify(data));
+    }
+  });
 });
 
 server.on('upgrade', (req, socket, head) => {
@@ -97,23 +132,25 @@ server.on('upgrade', (req, socket, head) => {
   } else if (pathname === '/ws/alarm') {
     wssAlarm.handleUpgrade(req, socket, head, (ws) => wssAlarm.emit('connection', ws, req));
   } else if (pathname.startsWith('/api/drones/') && pathname.endsWith('/telemetry')) {
-    wssVideo.handleUpgrade(req, socket, head, (ws) => wssVideo.emit('connection', ws, req));
+    wssTelemetry.handleUpgrade(req, socket, head, (ws) => wssTelemetry.emit('connection', ws, req));
   } else {
     socket.destroy();
   }
 });
 
-DataStore.initFromMock(mock);
+DataStore.initSeed();
 
 server.listen(PORT, () => {
   console.log('Server running at http://localhost:3000');
   console.log('[DataStore] 数据存储已初始化，使用文件系统持久化存储');
+  console.log('[WebSocket] 视频、告警、遥测通道已就绪');
 });
 
 function shutdown(signal) {
   console.log(`\n[${signal}] shutting down...`);
   wssVideo.clients.forEach((c) => c.close());
   wssAlarm.clients.forEach((c) => c.close());
+  wssTelemetry.clients.forEach((c) => c.close());
   server.close(() => process.exit(0));
 }
 process.on('SIGINT', () => shutdown('SIGINT'));

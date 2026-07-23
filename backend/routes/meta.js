@@ -11,7 +11,7 @@ const ENDPOINTS = [
   // ---------- 飞控 ----------
   { category: '飞控', method: 'GET',    path: '/api/drones',                       description: '机队列表',           params: '',                                        response: '{code:0, data: [Drone]}' },
   { category: '飞控', method: 'GET',    path: '/api/drones/:id',                   description: '无人机详情',         params: 'id',                                      response: '{code:0, data: Drone}' },
-  { category: '飞控', method: 'POST',   path: '/api/drones/:id/return-home',       description: '一键返航（Mock）',  params: 'id',                                      response: '{code:0, data: Drone}' },
+  { category: '飞控', method: 'POST',   path: '/api/drones/:id/return-home',       description: '一键返航',  params: 'id',                                      response: '{code:0, data: Drone}' },
   { category: '飞控', method: 'GET',    path: '/api/drones/:id/telemetry',         description: '实时遥测数据',       params: 'id',                                      response: '{code:0, data: {lat,lng,battery,signal,altitude,velocity}}' },
   { category: '飞控', method: 'GET',    path: '/api/geo-fences',                   description: '电子围栏列表',       params: '',                                        response: '{code:0, data: [GeoFence]}' },
   { category: '飞控', method: 'POST',   path: '/api/geo-fences',                   description: '创建电子围栏',       params: '{name, polygon, type}',                   response: '{code:0, data: GeoFence}' },
@@ -38,8 +38,9 @@ const ENDPOINTS = [
   { category: '元数据', method: 'GET',  path: '/api/meta/endpoints',                description: '接口元数据',         params: '',                                        response: '{code:0, data: [Endpoint]}' },
 
   // ---------- WebSocket ----------
-  { category: 'WebSocket', method: 'WS', path: '/ws/video',                        description: '视频帧推送（每秒 Mock）', params: '',                                    response: 'JSON: {type, droneId, timestamp, frameIndex, dataUrl}' },
-  { category: 'WebSocket', method: 'WS', path: '/ws/alarm',                        description: '告警推送（每秒随机 Mock）', params: '',                                  response: 'JSON: {type, data: Alarm, timestamp}' }
+  { category: 'WebSocket', method: 'WS', path: '/ws/video',                        description: '视频帧推送', params: '',                                    response: 'JSON: {type, droneId, timestamp, frameIndex, dataUrl}' },
+  { category: 'WebSocket', method: 'WS', path: '/ws/alarm',                        description: '告警推送（事件驱动）', params: '',                                  response: 'JSON: {type, data: Alarm, timestamp}' },
+  { category: 'WebSocket', method: 'WS', path: '/api/drones/:id/telemetry',        description: '遥测数据推送（事件驱动）', params: 'id',                              response: 'JSON: {type, data: Telemetry, timestamp}' }
 ];
 
 // GET /api/meta/endpoints

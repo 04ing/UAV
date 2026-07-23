@@ -16,39 +16,15 @@ let currentTab = 'plans';
 let dronesCache = [];
 
 /* =====================================================================
- * 兜底数据
+ * 工具函数
  * ===================================================================== */
-const FALLBACK_PLANS = [
-  { id: 'PLAN-001', name: '大坝主体日常巡检', droneId: 'DRONE-001', route: [{ lat: 30.6012, lng: 114.3025 }, { lat: 30.6020, lng: 114.3050 }], frequency: 'daily', startTime: '2026-07-20T08:00:00Z', status: 'running' },
-  { id: 'PLAN-002', name: '库区水面周巡检', droneId: 'DRONE-002', route: [{ lat: 30.5980, lng: 114.2980 }, { lat: 30.5990, lng: 114.3010 }], frequency: 'weekly', startTime: '2026-07-21T08:00:00Z', status: 'pending' },
-  { id: 'PLAN-003', name: '边坡月度巡检', droneId: 'DRONE-003', route: [{ lat: 30.6050, lng: 114.3100 }, { lat: 30.6060, lng: 114.3120 }], frequency: 'monthly', startTime: '2026-07-15T08:00:00Z', status: 'done' },
-  { id: 'PLAN-004', name: '管理区夜间巡检', droneId: 'DRONE-004', route: [{ lat: 30.5970, lng: 114.3050 }, { lat: 30.5980, lng: 114.3060 }], frequency: 'daily', startTime: '2026-07-20T22:00:00Z', status: 'pending' },
-  { id: 'PLAN-005', name: '溢洪道专项巡检', droneId: 'DRONE-006', route: [{ lat: 30.6020, lng: 114.3150 }, { lat: 30.6030, lng: 114.3160 }], frequency: 'weekly', startTime: '2026-07-20T09:00:00Z', status: 'running' }
-];
-
-const FALLBACK_ORDERS = [
-  { id: 'WO-001', alarmId: 'ALARM-001', title: '大坝左岸裂缝修复', status: 'pending', assignee: '张工', createdAt: '2026-07-20T09:20:00Z', updatedAt: '2026-07-20T09:20:00Z', description: 'DRONE-001 在大坝左岸发现长约 2m 裂缝，需紧急评估结构影响' },
-  { id: 'WO-002', alarmId: 'ALARM-002', title: '库区漂浮物清理', status: 'processing', assignee: '李工', createdAt: '2026-07-20T09:25:00Z', updatedAt: '2026-07-20T09:30:00Z', description: '库区水面发现大量漂浮物，已安排清理船只作业' },
-  { id: 'WO-003', alarmId: 'ALARM-003', title: '右坝肩渗漏处理', status: 'review', assignee: '王工', createdAt: '2026-07-20T09:30:00Z', updatedAt: '2026-07-20T10:00:00Z', description: '右坝肩发现渗漏点，已完成临时止水处理，待专家复核' },
-  { id: 'WO-004', alarmId: 'ALARM-004', title: '边坡滑塌加固', status: 'closed', assignee: '赵工', createdAt: '2026-07-20T09:35:00Z', updatedAt: '2026-07-20T11:00:00Z', description: '边坡滑塌区域已完成锚固与喷砼施工并验收通过' },
-  { id: 'WO-005', alarmId: 'ALARM-005', title: '违章复垦制止', status: 'pending', assignee: '张工', createdAt: '2026-07-20T09:40:00Z', updatedAt: '2026-07-20T09:40:00Z', description: '库区管理范围内发现违规复垦行为，需联系水政执法' },
-  { id: 'WO-006', alarmId: 'ALARM-006', title: '管理房漏损维修', status: 'closed', assignee: '李工', createdAt: '2026-07-20T09:45:00Z', updatedAt: '2026-07-20T10:30:00Z', description: '管理房屋顶漏损已完成防水层维修' },
-  { id: 'WO-007', alarmId: 'ALARM-007', title: '库区人员入侵调查', status: 'processing', assignee: '王工', createdAt: '2026-07-20T09:50:00Z', updatedAt: '2026-07-20T10:10:00Z', description: '监控发现未授权人员进入库区核心范围，安保已赶赴现场' },
-  { id: 'WO-008', alarmId: 'ALARM-008', title: '溢洪道裂缝评估', status: 'review', assignee: '赵工', createdAt: '2026-07-20T09:55:00Z', updatedAt: '2026-07-20T10:20:00Z', description: '溢洪道侧墙裂缝已完成现场裂缝宽度检测，待结构评估' }
-];
-
-const ALARMS_MAP = {
-  'ALARM-001': { type: '裂缝', severity: 'high' },
-  'ALARM-002': { type: '漂浮物', severity: 'medium' },
-  'ALARM-003': { type: '渗漏', severity: 'high' },
-  'ALARM-004': { type: '边坡滑塌', severity: 'high' },
-  'ALARM-005': { type: '违章复垦', severity: 'medium' },
-  'ALARM-006': { type: '建筑物漏损', severity: 'low' },
-  'ALARM-007': { type: '人员入侵', severity: 'high' },
-  'ALARM-008': { type: '裂缝', severity: 'medium' },
-  'ALARM-009': { type: '漂浮物', severity: 'low' },
-  'ALARM-010': { type: '渗漏', severity: 'medium' }
-};
+function unwrap(res, fallback = []) {
+  if (Array.isArray(res)) return res;
+  if (res && Array.isArray(res.data)) return res.data;
+  if (res && Array.isArray(res.items)) return res.items;
+  if (res && res.data && Array.isArray(res.data.list)) return res.data.list;
+  return fallback;
+}
 
 const SEVERITY_INFO = {
   high: { label: '高', cls: 'badge-danger', color: 'var(--danger)' },
@@ -713,20 +689,20 @@ function closeDetailPanel() {
 async function loadPlans() {
   try {
     const res = await plansApi.list();
-    return unwrap(res, FALLBACK_PLANS);
+    return unwrap(res);
   } catch (err) {
     console.warn('[business] 加载巡检计划失败:', err.message || err);
-    return FALLBACK_PLANS;
+    return [];
   }
 }
 
 async function loadOrders() {
   try {
     const res = await ordersApi.list();
-    return unwrap(res, FALLBACK_ORDERS);
+    return unwrap(res);
   } catch (err) {
     console.warn('[business] 加载工单失败:', err.message || err);
-    return FALLBACK_ORDERS;
+    return [];
   }
 }
 

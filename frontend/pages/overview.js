@@ -837,39 +837,41 @@ async function loadKPIs(container) {
     if (el) el.textContent = value;
   };
 
-  // 计算本地 Mock KPI（基于 NODES）
-  const mockOnlineDevices = NODES.device.filter((n) => n.status !== 'offline').length;
-  const mockAlarms = 10;
-  const mockAccuracy = '95.2';
-  const mockMileage = '128.5';
-
-  // 非异步 KPI 立即填充；"在线设备数"保持 '--' 直到 API 返回
-  setKPI('今日告警数', mockAlarms);
-  setKPI('AI 识别准确率', mockAccuracy);
-  setKPI('今日巡检里程', mockMileage);
-
-  // 尝试从后端拉取无人机列表覆盖"在线设备数"
-  let apiOnline = null;
   try {
-    const res = await dronesApi.list();
+    const [dronesRes, alarmsRes] = await Promise.all([
+      dronesApi.list(),
+      fetch('/api/alarms', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json())
+    ]);
+
     let drones = null;
-    if (Array.isArray(res)) drones = res;
-    else if (res && Array.isArray(res.data)) drones = res.data;
-    else if (res && Array.isArray(res.items)) drones = res.items;
-    else if (res && res.data && Array.isArray(res.data.items)) drones = res.data.items;
+    if (Array.isArray(dronesRes)) drones = dronesRes;
+    else if (dronesRes && Array.isArray(dronesRes.data)) drones = dronesRes.data;
+    else if (dronesRes && Array.isArray(dronesRes.items)) drones = dronesRes.items;
+    else if (dronesRes && dronesRes.data && Array.isArray(dronesRes.data.items)) drones = dronesRes.data.items;
 
-    if (drones && drones.length) {
-      apiOnline = drones.filter((d) => {
-        const s = d.status || d.state || '';
-        return s && s !== 'offline' && s !== 'disconnected';
-      }).length;
-    }
+    const onlineCount = drones && drones.length 
+      ? drones.filter((d) => {
+          const s = d.status || d.state || '';
+          return s && s !== 'offline' && s !== 'disconnected';
+        }).length
+      : 0;
+
+    const alarmCount = alarmsRes && alarmsRes.data && Array.isArray(alarmsRes.data)
+      ? alarmsRes.data.filter(a => a.status === 'pending').length
+      : 0;
+
+    setKPI('在线设备数', onlineCount || '--');
+    setKPI('今日告警数', alarmCount || '0');
+    setKPI('AI 识别准确率', '--');
+    setKPI('今日巡检里程', '--');
+
   } catch (err) {
-    // 后端不可用或返回占位响应：使用 Mock 派生数据
-    console.warn('[overview] 加载无人机列表失败，使用 Mock KPI：', err.message || err);
+    console.warn('[overview] 加载 KPI 数据失败：', err.message || err);
+    setKPI('在线设备数', '--');
+    setKPI('今日告警数', '--');
+    setKPI('AI 识别准确率', '--');
+    setKPI('今日巡检里程', '--');
   }
-
-  setKPI('在线设备数', apiOnline || mockOnlineDevices);
 }
 
 export default { render };

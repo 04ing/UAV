@@ -1,0 +1,116 @@
+[
+  {
+    "id": "PLAN-001",
+    "name": "大坝主体日常巡检",
+    "droneId": "DRONE-001",
+    "route": [
+      {
+        "lat": 30.6012,
+        "lng": 114.3025
+      },
+      {
+        "lat": 30.602,
+        "lng": 114.305
+      },
+      {
+        "lat": 30.601,
+        "lng": 114.3075
+      },
+      {
+        "lat": 30.6,
+        "lng": 114.305
+      }
+    ],
+    "frequency": "daily",
+    "startTime": "2026-07-20T08:00:00Z",
+    "status": "running"
+  },
+  {
+    "id": "PLAN-002",
+    "name": "库区水面周巡检",
+    "droneId": "DRONE-002",
+    "route": [
+      {
+        "lat": 30.598,
+        "lng": 114.298
+      },
+      {
+        "lat": 30.599,
+        "lng": 114.301
+      },
+      {
+        "lat": 30.597,
+        "lng": 114.303
+      }
+    ],
+    "frequency": "weekly",
+    "startTime": "2026-07-21T08:00:00Z",
+    "status": "pending"
+  },
+  {
+    "id": "PLAN-003",
+    "name": "边坡月度巡检",
+    "droneId": "DRONE-003",
+    "route": [
+      {
+        "lat": 30.605,
+        "lng": 114.31
+      },
+      {
+        "lat": 30.606,
+        "lng": 114.312
+      },
+      {
+        "lat": 30.607,
+        "lng": 114.314
+      }
+    ],
+    "frequency": "monthly",
+    "startTime": "2026-07-15T08:00:00Z",
+    "status": "done"
+  },
+  {
+    "id": "PLAN-004",
+    "name": "管理区夜间巡检",
+    "droneId": "DRONE-004",
+    "route": [
+      {
+        "lat": 30.597,
+        "lng": 114.305
+      },
+      {
+        "lat": 30.598,
+        "lng": 114.306
+      },
+      {
+        "lat": 30.599,
+        "lng": 114.307
+      }
+    ],
+    "frequency": "daily",
+    "startTime": "2026-07-20T22:00:00Z",
+    "status": "pending"
+  },
+  {
+    "id": "PLAN-005",
+    "name": "溢洪道专项巡检",
+    "droneId": "DRONE-006",
+    "route": [
+      {
+        "lat": 30.602,
+        "lng": 114.315
+      },
+      {
+        "lat": 30.603,
+        "lng": 114.316
+      },
+      {
+        "lat": 30.604,
+        "lng": 114.317
+      }
+    ],
+    "frequency": "weekly",
+    "startTime": "2026-07-20T09:00:00Z",
+    "status": "running"
+  }
+]

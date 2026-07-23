@@ -1,0 +1,148 @@
+[
+  {
+    "id": "ALARM-013",
+    "type": "??",
+    "severity": "high",
+    "droneId": "DRONE-001",
+    "lat": 30.6012,
+    "lng": 114.3025,
+    "timestamp": "2026-07-22T04:44:10.803Z",
+    "status": "pending",
+    "imageBase64": null,
+    "description": "????"
+  },
+  {
+    "id": "ALARM-012",
+    "type": "??",
+    "severity": "medium",
+    "droneId": "DRONE-TEST-002",
+    "lat": 30.5985,
+    "lng": 114.2985,
+    "timestamp": "2026-07-22T01:56:45.513Z",
+    "status": "pending",
+    "imageBase64": null,
+    "description": "???????"
+  },
+  {
+    "id": "ALARM-011",
+    "type": "??",
+    "severity": "high",
+    "droneId": "DRONE-TEST-001",
+    "lat": 30.6015,
+    "lng": 114.3028,
+    "timestamp": "2026-07-22T01:56:45.506Z",
+    "status": "pending",
+    "imageBase64": null,
+    "description": "????1.5m??"
+  },
+  {
+    "id": "ALARM-001",
+    "type": "裂缝",
+    "severity": "high",
+    "droneId": "DRONE-001",
+    "lat": 30.6015,
+    "lng": 114.3028,
+    "timestamp": "2026-07-20T09:15:00Z",
+    "status": "pending",
+    "imageUrl": "/uploads/alarm-001.jpg"
+  },
+  {
+    "id": "ALARM-002",
+    "type": "漂浮物",
+    "severity": "medium",
+    "droneId": "DRONE-002",
+    "lat": 30.5985,
+    "lng": 114.2985,
+    "timestamp": "2026-07-20T09:20:00Z",
+    "status": "processing",
+    "imageUrl": "/uploads/alarm-002.jpg"
+  },
+  {
+    "id": "ALARM-003",
+    "type": "渗漏",
+    "severity": "high",
+    "droneId": "DRONE-003",
+    "lat": 30.6055,
+    "lng": 114.3105,
+    "timestamp": "2026-07-20T09:25:00Z",
+    "status": "pending",
+    "imageUrl": "/uploads/alarm-003.jpg"
+  },
+  {
+    "id": "ALARM-004",
+    "type": "边坡滑塌",
+    "severity": "high",
+    "droneId": "DRONE-006",
+    "lat": 30.6025,
+    "lng": 114.3155,
+    "timestamp": "2026-07-20T09:30:00Z",
+    "status": "closed",
+    "imageUrl": "/uploads/alarm-004.jpg"
+  },
+  {
+    "id": "ALARM-005",
+    "type": "违章复垦",
+    "severity": "medium",
+    "droneId": "DRONE-001",
+    "lat": 30.6018,
+    "lng": 114.303,
+    "timestamp": "2026-07-20T09:35:00Z",
+    "status": "pending",
+    "imageUrl": "/uploads/alarm-005.jpg"
+  },
+  {
+    "id": "ALARM-006",
+    "type": "建筑物漏损",
+    "severity": "low",
+    "droneId": "DRONE-002",
+    "lat": 30.5988,
+    "lng": 114.299,
+    "timestamp": "2026-07-20T09:40:00Z",
+    "status": "closed",
+    "imageUrl": "/uploads/alarm-006.jpg"
+  },
+  {
+    "id": "ALARM-007",
+    "type": "人员入侵",
+    "severity": "high",
+    "droneId": "DRONE-006",
+    "lat": 30.6028,
+    "lng": 114.316,
+    "timestamp": "2026-07-20T09:45:00Z",
+    "status": "processing",
+    "imageUrl": "/uploads/alarm-007.jpg"
+  },
+  {
+    "id": "ALARM-008",
+    "type": "裂缝",
+    "severity": "medium",
+    "droneId": "DRONE-003",
+    "lat": 30.606,
+    "lng": 114.311,
+    "timestamp": "2026-07-20T09:50:00Z",
+    "status": "pending",
+    "imageUrl": "/uploads/alarm-008.jpg"
+  },
+  {
+    "id": "ALARM-009",
+    "type": "漂浮物",
+    "severity": "low",
+    "droneId": "DRONE-001",
+    "lat": 30.602,
+    "lng": 114.3035,
+    "timestamp": "2026-07-20T09:55:00Z",
+    "status": "closed",
+    "imageUrl": "/uploads/alarm-009.jpg"
+  },
+  {
+    "id": "ALARM-010",
+    "type": "渗漏",
+    "severity": "medium",
+    "droneId": "DRONE-006",
+    "lat": 30.603,
+    "lng": 114.3165,
+    "timestamp": "2026-07-20T10:00:00Z",
+    "status": "processing",
+    "imageUrl": "/uploads/alarm-010.jpg"
+  }
+]

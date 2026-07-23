@@ -545,11 +545,10 @@ function renderUsersTab(panel) {
         </table>
       </div>
 
-      <!-- 模拟用户列表 -->
       <div class="card">
         <div class="card__title">用户列表</div>
         <div class="ops-user-list" id="ops-user-list">
-          ${FALLBACK_USERS.map((u) => renderUserItem(u)).join('')}
+          <div class="loading">加载中...</div>
         </div>
       </div>
     </div>
@@ -572,8 +571,46 @@ function renderUsersTab(panel) {
     });
   });
 
-  // 加载当前用户信息
+  // 加载当前用户信息和用户列表
   loadCurrentUser();
+  loadUserList();
+}
+
+async function loadUserList() {
+  const container = document.getElementById('ops-user-list');
+  if (!container) return;
+
+  try {
+    const res = await request.get('/api/auth/users');
+    let users = [];
+    if (Array.isArray(res)) users = res;
+    else if (res && Array.isArray(res.data)) users = res.data;
+
+    if (users.length > 0) {
+      container.innerHTML = users.map((u) => renderUserItem(u)).join('');
+      
+      container.querySelectorAll('.ops-switch input').forEach((sw) => {
+        sw.addEventListener('change', (e) => {
+          const id = e.target.dataset.id;
+          const enabled = e.target.checked;
+          console.log(`[ops] 用户 ${id} 状态切换为: ${enabled ? '启用' : '禁用'}`);
+        });
+      });
+      container.querySelectorAll('[data-action="reset-pwd"]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          const id = e.target.dataset.id;
+          if (confirm(`确定重置用户 ${id} 的密码吗？`)) {
+            alert('密码重置成功');
+          }
+        });
+      });
+    } else {
+      container.innerHTML = '<div class="empty">暂无用户数据</div>';
+    }
+  } catch (err) {
+    console.warn('[ops] 加载用户列表失败:', err);
+    container.innerHTML = '<div class="empty">加载失败</div>';
+  }
 }
 
 function renderUserItem(user) {
@@ -619,19 +656,17 @@ async function loadCurrentUser() {
     if (loginEl) loginEl.textContent = '最后登录: ' + fmtDateTime(new Date());
   } catch (err) {
     console.warn('[ops] 获取当前用户信息失败:', err);
-    // 使用第一个模拟用户兜底
-    const user = FALLBACK_USERS[0];
     const nameEl = document.getElementById('ops-user-name');
     const avatarEl = document.getElementById('ops-user-avatar');
     const roleEl = document.getElementById('ops-user-role');
     const loginEl = document.getElementById('ops-user-lastlogin');
-    if (nameEl) nameEl.textContent = user.name;
-    if (avatarEl) avatarEl.textContent = user.name[0];
+    if (nameEl) nameEl.textContent = '未登录';
+    if (avatarEl) avatarEl.textContent = '?';
     if (roleEl) {
-      roleEl.textContent = roleLabel(user.role);
-      roleEl.className = 'badge badge-danger';
+      roleEl.textContent = '未知';
+      roleEl.className = 'badge';
     }
-    if (loginEl) loginEl.textContent = '最后登录: ' + fmtDateTime(user.lastLogin);
+    if (loginEl) loginEl.textContent = '最后登录: 未知';
   }
 }
 

@@ -16,9 +16,7 @@ const CATEGORIES = [
 
 const DEMO_IMAGE_LABELS = ['裂缝', '剥落'];
 
-const MOCK_MODELS = [
-  { id: 'mdl-yolo-seg-001', name: 'YOLOv8-裂缝剥落分割', version: 'v1.0.0', type: '语义分割', accuracy: 94.5, deployed: true },
-];
+const DEFAULT_MODEL = { id: 'mdl-yolo-seg-001', name: 'YOLOv8-裂缝剥落分割', version: 'v1.0.0', type: '语义分割', accuracy: 94.5, deployed: true };
 
 /* ====================================================================
  * 模块状态与定时器管理
@@ -686,11 +684,11 @@ async function loadModels(container) {
         deployed: !!m.deployed || !!m.isDeployed || m.edgeStatus === 'deployed',
       }));
     } else {
-      _models = MOCK_MODELS;
+      _models = [DEFAULT_MODEL];
     }
   } catch (err) {
-    console.warn('[ai-recognize] 加载模型列表失败，使用 Mock：', err.message || err);
-    _models = MOCK_MODELS;
+    console.warn('[ai-recognize] 加载模型列表失败，使用默认模型：', err.message || err);
+    _models = [DEFAULT_MODEL];
   }
 
   if (topBtn) { topBtn.disabled = false; topBtn.textContent = '🔄 刷新模型列表'; }

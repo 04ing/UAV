@@ -210,33 +210,20 @@ const DataStore = {
       saveFile(STORE_FILES.users, users);
       return user;
     },
+    update: (id, updates) => {
+      const users = DataStore.users.getAll();
+      const index = users.findIndex(u => u.id === id);
+      if (index !== -1) {
+        users[index] = { ...users[index], ...updates };
+        saveFile(STORE_FILES.users, users);
+        return users[index];
+      }
+      return null;
+    },
     clear: () => saveFile(STORE_FILES.users, [])
   },
 
-  initFromMock: (mockData) => {
-    if (!mockData) return;
-    if (DataStore.drones.getAll().length === 0 && mockData.getDrones) {
-      saveFile(STORE_FILES.drones, mockData.getDrones());
-    }
-    if (DataStore.alarms.getAll().length === 0 && mockData.getAlarms) {
-      saveFile(STORE_FILES.alarms, mockData.getAlarms());
-    }
-    if (DataStore.workOrders.getAll().length === 0 && mockData.getWorkOrders) {
-      saveFile(STORE_FILES.workOrders, mockData.getWorkOrders());
-    }
-    if (DataStore.inspectionPlans.getAll().length === 0 && mockData.getInspectionPlans) {
-      saveFile(STORE_FILES.inspectionPlans, mockData.getInspectionPlans());
-    }
-    if (DataStore.auditLogs.getAll().length === 0 && mockData.getAuditLogs) {
-      saveFile(STORE_FILES.auditLogs, mockData.getAuditLogs());
-    }
-    if (DataStore.geoFences.getAll().length === 0 && mockData.getGeoFences) {
-      saveFile(STORE_FILES.geoFences, mockData.getGeoFences());
-    }
-    if (DataStore.users.getAll().length === 0 && mockData.getUsers) {
-      saveFile(STORE_FILES.users, mockData.getUsers());
-    }
-  },
+  
 
   resetAll: () => {
     Object.values(STORE_FILES).forEach(file => {
@@ -245,6 +232,39 @@ const DataStore = {
         fs.unlinkSync(filePath);
       }
     });
+  },
+
+  initSeed: () => {
+    const users = DataStore.users.getAll();
+    if (users.length === 0) {
+      DataStore.users.add({
+        id: 'USER-001',
+        username: 'admin',
+        password: 'admin123',
+        role: 'admin',
+        name: '系统管理员',
+        createdAt: new Date().toISOString()
+      });
+      console.log('[DataStore] 已初始化默认管理员用户 (admin/admin123)');
+    }
+
+    const drones = DataStore.drones.getAll();
+    if (drones.length === 0) {
+      DataStore.drones.add({
+        id: 'DRONE-001',
+        model: 'DJI M350',
+        battery: 85,
+        signal: '强',
+        status: 'idle',
+        lat: 30.6012,
+        lng: 114.3025,
+        altitude: 0,
+        speed: 0,
+        heading: 0,
+        lastUpdate: new Date().toISOString()
+      });
+      console.log('[DataStore] 已初始化示例无人机数据');
+    }
   }
 };
 

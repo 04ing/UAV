@@ -27,6 +27,11 @@ router.post('/recognize', upload.single('file'), async (req, res) => {
   const base64Image = imageBuffer.toString('base64');
 
   try {
+    const isHealthy = await checkYOLOHealth();
+    if (!isHealthy) {
+      return error(res, 'AI 识别服务未启动，请先启动 YOLO 推理服务 (yolo_server.py)', 503);
+    }
+
     const result = await callYOLOServer(base64Image);
     if (result.code === 0) {
       success(res, result.data, result.msg || '识别完成');
@@ -39,6 +44,44 @@ router.post('/recognize', upload.single('file'), async (req, res) => {
     return error(res, 'YOLOv8 模型调用失败: ' + err.message, 500);
   }
 });
+
+function checkYOLOHealth() {
+  return new Promise((resolve) => {
+    const options = {
+      hostname: 'localhost',
+      port: 8080,
+      path: '/health',
+      method: 'GET',
+      timeout: 3000
+    };
+
+    const req = http.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      res.on('end', () => {
+        try {
+          const result = JSON.parse(data);
+          resolve(result.status === 'healthy');
+        } catch (e) {
+          resolve(false);
+        }
+      });
+    });
+
+    req.on('error', () => {
+      resolve(false);
+    });
+
+    req.on('timeout', () => {
+      req.destroy();
+      resolve(false);
+    });
+
+    req.end();
+  });
+}
 
 function callYOLOServer(base64Image) {
   return new Promise((resolve, reject) => {

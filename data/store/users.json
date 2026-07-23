@@ -1,0 +1,23 @@
+[
+  {
+    "id": "USER-001",
+    "username": "admin",
+    "password": "admin123",
+    "role": "admin",
+    "name": "系统管理员"
+  },
+  {
+    "id": "USER-002",
+    "username": "operator1",
+    "password": "op123456",
+    "role": "operator",
+    "name": "张操作员"
+  },
+  {
+    "id": "USER-003",
+    "username": "viewer1",
+    "password": "view1234",
+    "role": "viewer",
+    "name": "李查看员"
+  }
+]

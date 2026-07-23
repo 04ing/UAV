@@ -1,18 +1,34 @@
 const express = require('express');
+const bcrypt = require('bcrypt');
 const DataStore = require('../data/dataStore');
 const { success, error } = require('../utils/response');
 const { signToken } = require('../middleware/auth');
 
 const authRouter = express.Router();
 
-authRouter.post('/login', (req, res) => {
+authRouter.post('/login', async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) {
     return error(res, '用户名和密码必填', 400);
   }
   
   const user = DataStore.users.getByUsername(username);
-  if (!user || user.password !== password) {
+  if (!user) {
+    return error(res, '用户名或密码错误', 401);
+  }
+
+  let isValid = false;
+  try {
+    isValid = await bcrypt.compare(password, user.password);
+  } catch (e) {
+    isValid = user.password === password;
+    if (isValid && user.password.length < 60) {
+      const hash = await bcrypt.hash(password, 10);
+      DataStore.users.update(user.id, { password: hash });
+    }
+  }
+
+  if (!isValid) {
     return error(res, '用户名或密码错误', 401);
   }
   
@@ -61,7 +77,18 @@ authRouter.post('/logout', (req, res) => {
   success(res, {}, '退出成功');
 });
 
-authRouter.post('/users', (req, res) => {
+authRouter.get('/users', (req, res) => {
+  const users = DataStore.users.getAll().map(u => ({
+    id: u.id,
+    username: u.username,
+    name: u.name,
+    role: u.role,
+    status: 'enabled'
+  }));
+  success(res, users, '获取用户列表成功');
+});
+
+authRouter.post('/users', async (req, res) => {
   const { username, password, role, name } = req.body || {};
   
   if (!username || !password || !role) {
@@ -72,11 +99,12 @@ authRouter.post('/users', (req, res) => {
     return error(res, '用户名已存在', 400);
   }
   
+  const hash = await bcrypt.hash(password, 10);
   const users = DataStore.users.getAll();
   const newUser = {
     id: `USER-${String(users.length + 1).padStart(3, '0')}`,
     username,
-    password,
+    password: hash,
     role: role || 'viewer',
     name: name || username
   };

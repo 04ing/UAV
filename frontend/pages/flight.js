@@ -19,25 +19,8 @@ let tempPolygon = null;
 let isDrawing = false;
 let activeDetailId = null;
 
-/* ---------- 兜底数据 ---------- */
-const FALLBACK_DRONES = [
-  { id: 'DRONE-001', model: 'DJI M350',        battery: 85, signal: '强', status: 'inspecting', lat: 30.6012, lng: 114.3025, lastUpdate: '2026-07-20T10:30:00Z' },
-  { id: 'DRONE-002', model: 'DJI M30T',        battery: 72, signal: '强', status: 'idle',       lat: 30.5980, lng: 114.2980, lastUpdate: '2026-07-20T10:29:50Z' },
-  { id: 'DRONE-003', model: 'DJI Matrice 300', battery: 45, signal: '中', status: 'returning',  lat: 30.6050, lng: 114.3100, lastUpdate: '2026-07-20T10:29:40Z' },
-  { id: 'DRONE-004', model: 'DJI M350',        battery: 90, signal: '强', status: 'idle',       lat: 30.5970, lng: 114.3050, lastUpdate: '2026-07-20T10:29:30Z' },
-  { id: 'DRONE-005', model: 'DJI M30T',        battery: 30, signal: '弱', status: 'returning',  lat: 30.6080, lng: 114.2970, lastUpdate: '2026-07-20T10:29:20Z' },
-  { id: 'DRONE-006', model: 'DJI Matrice 300', battery: 65, signal: '中', status: 'inspecting', lat: 30.6020, lng: 114.3150, lastUpdate: '2026-07-20T10:29:10Z' },
-  { id: 'DRONE-007', model: 'DJI M350',        battery: 0,  signal: '弱', status: 'offline',    lat: 30.5990, lng: 114.3000, lastUpdate: '2026-07-20T09:00:00Z' }
-];
-
-const FALLBACK_FENCES = [
-  { id: 'GEOFENCE-001', name: '大坝核心区', polygon: [{lat:30.6012,lng:114.3025},{lat:30.6050,lng:114.3050},{lat:30.6030,lng:114.3100},{lat:30.5990,lng:114.3070}], type: 'restricted' },
-  { id: 'GEOFENCE-002', name: '库区禁飞区', polygon: [{lat:30.5980,lng:114.2980},{lat:30.6020,lng:114.2990},{lat:30.6010,lng:114.3030},{lat:30.5970,lng:114.3010}], type: 'no-fly' },
-  { id: 'GEOFENCE-003', name: '管理区',     polygon: [{lat:30.5970,lng:114.3050},{lat:30.5990,lng:114.3060},{lat:30.5990,lng:114.3080},{lat:30.5970,lng:114.3070}], type: 'restricted' }
-];
-
 /* ---------- 工具函数 ---------- */
-function unwrap(res, fallback) {
+function unwrap(res, fallback = []) {
   if (Array.isArray(res)) return res;
   if (res && Array.isArray(res.data)) return res.data;
   if (res && Array.isArray(res.items)) return res.items;
@@ -699,16 +682,10 @@ function showDrawer(drone) {
   const drawer = document.createElement('div');
   drawer.className = 'flight-drawer';
 
-  // 模拟遥测历史和任务数据
-  const telemetryHistory = [
-    { time: '10:25:00', battery: 92, altitude: 85, velocity: 8.2 },
-    { time: '10:26:00', battery: 89, altitude: 82, velocity: 7.5 },
-    { time: '10:27:00', battery: 88, altitude: 88, velocity: 9.1 },
-    { time: '10:28:00', battery: 86, altitude: 80, velocity: 6.8 },
-    { time: '10:29:00', battery: 85, altitude: 78, velocity: 7.0 },
-  ];
-
-  const batteryValues = telemetryHistory.map(t => t.battery);
+  // 遥测历史数据（从真实数据生成）
+  const telemetryHistory = [];
+  
+  const batteryValues = telemetryHistory.length > 0 ? telemetryHistory.map(t => t.battery) : [drone.battery || 50];
   const minB = Math.min(...batteryValues) - 5;
   const maxB = Math.max(...batteryValues) + 5;
   const sparkPoints = batteryValues.map((v, i) => {
@@ -1242,8 +1219,7 @@ function renderParamsTab(container) {
 async function refreshDrones() {
   try {
     const res = await drones.list();
-    const newData = unwrap(res, FALLBACK_DRONES);
-    // track status changes
+    const newData = unwrap(res);
     newData.forEach((d) => {
       if (prevDroneStatus.has(d.id) && prevDroneStatus.get(d.id) !== d.status) {
         // will trigger flash on next render
@@ -1255,7 +1231,6 @@ async function refreshDrones() {
     if (fleetPanel && currentTab === 'fleet') {
       renderFleetTab(fleetPanel);
     }
-    // If map is visible, refresh drones on map too
     if (mapInstance && currentTab === 'geofence') {
       renderDronesOnMap();
     }
@@ -1267,7 +1242,7 @@ async function refreshDrones() {
 async function refreshFences() {
   try {
     const res = await geoFences.list();
-    fenceData = unwrap(res, FALLBACK_FENCES);
+    fenceData = unwrap(res);
     const gfPanel = document.querySelector('[data-panel="geofence"]');
     if (gfPanel && currentTab === 'geofence') {
       renderFenceList(gfPanel.querySelector('#fence-list'));

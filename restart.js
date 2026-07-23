@@ -2,7 +2,6 @@ const { execSync, spawn } = require('child_process');
 const path = require('path');
 
 const MAIN_PORT = 3000;
-const MOCK_PORT = 6789;
 const PROJECT_DIR = __dirname;
 
 function killProcessByPort(port) {
@@ -34,43 +33,6 @@ function killProcessByPort(port) {
     } catch (e) {
         console.log(`ℹ️ 端口 ${port} 上没有运行的进程`);
     }
-}
-
-function startMockServer() {
-    console.log('\n🚀 启动 DJI 模拟服务器...');
-    const mockServer = spawn('node', ['dji-mock-server.js'], {
-        cwd: PROJECT_DIR,
-        stdio: ['ignore', 'pipe', 'pipe']
-    });
-    
-    mockServer.stdout.on('data', (data) => {
-        console.log(`[MOCK] ${data.toString().trim()}`);
-    });
-    
-    mockServer.stderr.on('data', (data) => {
-        console.log(`[MOCK ERR] ${data.toString().trim()}`);
-    });
-    
-    mockServer.on('error', (err) => {
-        console.error(`❌ DJI 模拟服务器启动失败: ${err.message}`);
-    });
-    
-    mockServer.on('close', (code) => {
-        console.log(`📌 DJI 模拟服务器退出 (码: ${code})`);
-    });
-    
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            try {
-                execSync(`powershell -Command "Test-NetConnection localhost -Port ${MOCK_PORT}"`, { stdio: 'ignore' });
-                console.log(`✅ DJI 模拟服务器已启动 (端口: ${MOCK_PORT})`);
-                resolve(true);
-            } catch (e) {
-                console.log(`⚠️ DJI 模拟服务器启动超时`);
-                resolve(false);
-            }
-        }, 3000);
-    });
 }
 
 function startMainServer() {
@@ -116,20 +78,17 @@ async function main() {
     console.log('========================================\n');
     
     console.log('🔧 停止现有服务...');
-    killProcessByPort(MOCK_PORT);
     killProcessByPort(MAIN_PORT);
     
     console.log('\n⏳ 等待端口释放...');
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    await startMockServer();
     await startMainServer();
     
     console.log('\n========================================');
     console.log('     服务启动完成!                        ');
     console.log('========================================');
-    console.log(`\n📡 DJI 模拟服务器: http://localhost:${MOCK_PORT}`);
-    console.log(`🌐 主后端服务: http://localhost:${MAIN_PORT}`);
+    console.log(`\n🌐 主后端服务: http://localhost:${MAIN_PORT}`);
     console.log(`🔗 前端页面: http://localhost:${MAIN_PORT}`);
     console.log(`\n👤 默认登录: admin / admin123`);
     console.log(`\n按 Ctrl+C 停止所有服务`);
@@ -142,7 +101,6 @@ main().catch(err => {
 
 process.on('SIGINT', () => {
     console.log('\n\n📌 用户终止，停止所有服务...');
-    killProcessByPort(MOCK_PORT);
     killProcessByPort(MAIN_PORT);
     process.exit(0);
 });
