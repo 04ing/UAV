@@ -14,6 +14,7 @@ let intervals = [];
 let modalEl = null;
 let currentFilter = '全部';
 let expandedRows = new Set();
+let cachedEndpoints = [];   // 本地缓存，避免过滤时重复请求
 
 /* =====================================================================
  * 工具函数
@@ -439,6 +440,7 @@ function cleanup() {
   if (modalEl) { modalEl.remove(); modalEl = null; }
   expandedRows.clear();
   currentFilter = '全部';
+  cachedEndpoints = [];
 }
 
 /* =====================================================================
@@ -458,9 +460,9 @@ function renderKPIPlaceholder() {
         <div class="kpi-card__delta up">服务正常</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-card__label">今日调用次数</div>
-        <div class="kpi-card__value"><span id="api-kpi-calls">--</span><span class="kpi-card__unit">次</span></div>
-        <div class="kpi-card__delta up">实时累计</div>
+        <div class="kpi-card__label">服务健康状态</div>
+        <div class="kpi-card__value"><span id="api-kpi-health">--</span></div>
+        <div class="kpi-card__delta up" id="api-kpi-health-detail">检测中</div>
       </div>
     </div>
   `;
@@ -827,13 +829,15 @@ export function render(container) {
     </section>
   `;
 
-  // 加载接口元数据
+  // 加载接口元数据（缓存到 cachedEndpoints，过滤时不再重复请求）
   meta.endpoints()
     .then((res) => {
       let endpoints = [];
       if (Array.isArray(res)) endpoints = res;
       else if (res && Array.isArray(res.data)) endpoints = res.data;
       else if (res && Array.isArray(res.items)) endpoints = res.items;
+
+      cachedEndpoints = endpoints;
 
       const tableContainer = document.getElementById('api-table-container');
       if (tableContainer) {
@@ -845,7 +849,29 @@ export function render(container) {
       const enabledCount = endpoints.filter((e) => e.method !== 'WS').length;
       animateCount(document.getElementById('api-kpi-total'), endpoints.length, { duration: 1000 });
       animateCount(document.getElementById('api-kpi-enabled'), enabledCount, { duration: 1200 });
-      animateCount(document.getElementById('api-kpi-calls'), 12480 + Math.floor(Math.random() * 800), { duration: 1400 });
+
+      // 健康探针（真实后端状态，替代原来的随机假数据）
+      fetch('/api/meta/health')
+        .then((r) => r.json())
+        .then((h) => {
+          const el = document.getElementById('api-kpi-health');
+          const detail = document.getElementById('api-kpi-health-detail');
+          if (h && h.data && h.data.status === 'healthy') {
+            if (el) el.textContent = '健康';
+            if (el) el.style.color = 'var(--success)';
+            if (detail) detail.textContent = `服务运行正常 · ${new Date(h.data.timestamp).toLocaleTimeString()}`;
+          } else {
+            if (el) el.textContent = '异常';
+            if (el) el.style.color = 'var(--danger)';
+            if (detail) detail.textContent = '服务状态异常';
+          }
+        })
+        .catch(() => {
+          const el = document.getElementById('api-kpi-health');
+          if (el) { el.textContent = '离线'; el.style.color = 'var(--danger)'; }
+          const detail = document.getElementById('api-kpi-health-detail');
+          if (detail) { detail.textContent = '无法连接服务器'; detail.classList.remove('up'); }
+        });
     })
     .catch((err) => {
       console.error('[api-page] 加载接口元数据失败:', err);
@@ -882,28 +908,15 @@ export function render(container) {
  * 表格交互
  * ===================================================================== */
 function bindTableInteractions(container) {
-  // 过滤按钮
+  // 过滤按钮（使用缓存数据本地过滤，不再重复请求后端）
   container.querySelectorAll('.api-filter__btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       currentFilter = btn.dataset.filter;
-      // 重新渲染表格（保持展开状态）
-      const tableWrap = container.querySelector('.api-table-wrap');
-      const tbody = tableWrap ? tableWrap.querySelector('tbody') : null;
-      if (!tbody) return;
-
-      // 获取原始数据（从当前 DOM 反解太麻烦，这里直接通过 meta.endpoints 重载）
-      // 简化：切换 filter 时重刷整页表格区
-      meta.endpoints().then((res) => {
-        let endpoints = [];
-        if (Array.isArray(res)) endpoints = res;
-        else if (res && Array.isArray(res.data)) endpoints = res.data;
-        else if (res && Array.isArray(res.items)) endpoints = res.items;
-        const tableContainer = document.getElementById('api-table-container');
-        if (tableContainer) {
-          tableContainer.innerHTML = renderTable(endpoints);
-          bindTableInteractions(tableContainer);
-        }
-      });
+      const tableContainer = document.getElementById('api-table-container');
+      if (tableContainer && cachedEndpoints.length > 0) {
+        tableContainer.innerHTML = renderTable(cachedEndpoints);
+        bindTableInteractions(tableContainer);
+      }
     });
   });
 
