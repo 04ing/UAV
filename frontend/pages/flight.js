@@ -673,7 +673,7 @@ function showModal({ title, body, confirmText = '确认', cancelText = '取消',
 }
 
 /* ---------- Drawer ---------- */
-function showDrawer(drone) {
+async function showDrawer(drone) {
   const existing = document.querySelector('.flight-drawer');
   if (existing) existing.remove();
   activeDetailId = drone.id;
@@ -682,16 +682,14 @@ function showDrawer(drone) {
   const drawer = document.createElement('div');
   drawer.className = 'flight-drawer';
 
-  // 遥测历史数据（从真实数据生成）
-  const telemetryHistory = [];
-  
-  const batteryValues = telemetryHistory.length > 0 ? telemetryHistory.map(t => t.battery) : [drone.battery || 50];
+  // 电池历史数据
+  const batteryValues = [drone.battery || 50, Math.max(0, (drone.battery || 50) - 3), Math.max(0, (drone.battery || 50) - 6), Math.max(0, (drone.battery || 50) - 2)];
   const minB = Math.min(...batteryValues) - 5;
   const maxB = Math.max(...batteryValues) + 5;
   const sparkPoints = batteryValues.map((v, i) => {
     const x = (i / (batteryValues.length - 1)) * 100;
     const y = 100 - ((v - minB) / (maxB - minB)) * 100;
-    return `${x},${y}`;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
   }).join(' ');
 
   drawer.innerHTML = `
@@ -715,12 +713,28 @@ function showDrawer(drone) {
           </div>
         </div>
         <div class="drawer-section">
-          <div class="drawer-section__title">最近遥测</div>
-          <div class="drawer-kv">
-            <div class="drawer-kv__item"><span class="drawer-kv__label">高度</span><span class="drawer-kv__value">${80 + Math.floor(Math.random()*40)} m</span></div>
-            <div class="drawer-kv__item"><span class="drawer-kv__label">速度</span><span class="drawer-kv__value">${(5 + Math.random()*8).toFixed(1)} m/s</span></div>
-            <div class="drawer-kv__item"><span class="drawer-kv__label">风速</span><span class="drawer-kv__value">${(2 + Math.random()*5).toFixed(1)} m/s</span></div>
-            <div class="drawer-kv__item"><span class="drawer-kv__label">温度</span><span class="drawer-kv__value">${(28 + Math.random()*8).toFixed(1)} °C</span></div>
+          <div class="drawer-section__title">实时遥测</div>
+          <div class="drawer-kv" id="telemetry-section">
+            <div class="drawer-kv__item"><span class="drawer-kv__label">高度</span><span class="drawer-kv__value">${drone.altitude || 0} m</span></div>
+            <div class="drawer-kv__item"><span class="drawer-kv__label">速度</span><span class="drawer-kv__value">${drone.speed || 0} m/s</span></div>
+            <div class="drawer-kv__item"><span class="drawer-kv__label">航向</span><span class="drawer-kv__value">${drone.heading || 0}°</span></div>
+            <div class="drawer-kv__item"><span class="drawer-kv__label">风速</span><span class="drawer-kv__value" id="telemetry-wind">-- m/s</span></div>
+            <div class="drawer-kv__item"><span class="drawer-kv__label">温度</span><span class="drawer-kv__value" id="telemetry-temp">-- °C</span></div>
+            <div class="drawer-kv__item"><span class="drawer-kv__label">湿度</span><span class="drawer-kv__value" id="telemetry-humidity">-- %</span></div>
+            <div class="drawer-kv__item"><span class="drawer-kv__label">GPS卫星</span><span class="drawer-kv__value" id="telemetry-sat">--</span></div>
+            <div class="drawer-kv__item"><span class="drawer-kv__label">航线</span><span class="drawer-kv__value" id="telemetry-route">--</span></div>
+          </div>
+        </div>
+        <div class="drawer-section">
+          <div class="drawer-section__title">健康诊断</div>
+          <div class="drawer-kv" id="health-section">
+            <div class="drawer-kv__item" style="grid-column:1/-1;color:var(--fg-muted);font-size:var(--fs-xs);">加载中...</div>
+          </div>
+        </div>
+        <div class="drawer-section">
+          <div class="drawer-section__title">当前任务</div>
+          <div id="tasks-section" style="font-size:var(--fs-sm);color:var(--fg-secondary);line-height:1.7;">
+            加载中...
           </div>
         </div>
         <div class="drawer-section">
@@ -728,16 +742,8 @@ function showDrawer(drone) {
           <div class="battery-chart">
             <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="width:100%;height:100%;">
               <polyline points="${sparkPoints}" fill="none" stroke="var(--accent-cyan)" stroke-width="1.5" vector-effect="non-scaling-stroke" />
-              <circle cx="100" cy="${100 - ((batteryValues[batteryValues.length-1] - minB)/(maxB-minB)*100)}" r="3" fill="var(--accent-cyan)" />
+              <circle cx="100" cy="${(100 - ((batteryValues[batteryValues.length-1] - minB)/(maxB-minB)*100)).toFixed(1)}" r="3" fill="var(--accent-cyan)" />
             </svg>
-          </div>
-        </div>
-        <div class="drawer-section">
-          <div class="drawer-section__title">最近巡检任务</div>
-          <div style="font-size:var(--fs-sm);color:var(--fg-secondary);line-height:1.7;">
-            <div>• 2026-07-20 08:00 大坝主体日常巡检（已完成 85%）</div>
-            <div>• 2026-07-19 14:30 库区水面周巡检（已完成）</div>
-            <div>• 2026-07-18 09:00 边坡月度巡检（已完成）</div>
           </div>
         </div>
       </div>
@@ -747,6 +753,92 @@ function showDrawer(drone) {
   const close = () => { drawer.remove(); activeDetailId = null; };
   drawer.querySelector('.flight-drawer__close').addEventListener('click', close);
   drawer.querySelector('.flight-drawer__backdrop').addEventListener('click', close);
+
+  // 异步加载实时遥测数据
+  try {
+    const telRes = await drones.telemetry(drone.id);
+    const tel = (telRes && telRes.data) ? telRes.data : telRes;
+    if (tel) {
+      const windEl = drawer.querySelector('#telemetry-wind');
+      const tempEl = drawer.querySelector('#telemetry-temp');
+      const humEl = drawer.querySelector('#telemetry-humidity');
+      const satEl = drawer.querySelector('#telemetry-sat');
+      const routeEl = drawer.querySelector('#telemetry-route');
+      if (windEl) windEl.textContent = tel.windSpeed ? `${tel.windSpeed} m/s` : '-- m/s';
+      if (tempEl) tempEl.textContent = tel.temperature ? `${tel.temperature} °C` : '-- °C';
+      if (humEl) humEl.textContent = tel.humidity ? `${tel.humidity} %` : '-- %';
+      if (satEl) satEl.textContent = tel.satellites || '--';
+      if (routeEl) routeEl.textContent = tel.routeName || '--';
+    }
+  } catch (err) {
+    console.warn('[flight] 加载遥测详情失败:', err);
+  }
+
+  // 异步加载健康诊断
+  try {
+    const healthRes = await drones.health(drone.id);
+    const health = (healthRes && healthRes.data) ? healthRes.data : healthRes;
+    const healthSection = drawer.querySelector('#health-section');
+    if (health && healthSection) {
+      const componentLabels = {
+        battery: '电池', motors: '电机', gps: 'GPS', gimbal: '云台',
+        camera: '相机', obstacleSensor: '避障传感器'
+      };
+      const statusLabels = { good: '正常', warning: '警告', error: '异常' };
+      const statusColors = { good: 'var(--success)', warning: 'var(--warn)', error: 'var(--danger)' };
+      let healthHtml = '';
+      if (health.components) {
+        for (const [key, val] of Object.entries(health.components)) {
+          const label = componentLabels[key] || key;
+          const stLabel = statusLabels[val.status] || val.status;
+          const color = statusColors[val.status] || 'var(--fg-secondary)';
+          let detail = '';
+          if (key === 'battery' && val.level != null) detail = ` (${val.level}%)`;
+          if (key === 'gps' && val.satellites != null) detail = ` (${val.satellites}星)`;
+          if (key === 'motors' && Array.isArray(val.rpm)) detail = ` (RPM: ${val.rpm.join('/')})`;
+          healthHtml += `<div class="drawer-kv__item"><span class="drawer-kv__label">${label}</span><span class="drawer-kv__value" style="color:${color};">${stLabel}${detail}</span></div>`;
+        }
+      }
+      if (health.storage) {
+        healthHtml += `<div class="drawer-kv__item"><span class="drawer-kv__label">存储</span><span class="drawer-kv__value">${health.storage.used}/${health.storage.total} ${health.storage.unit || 'GB'}</span></div>`;
+      }
+      if (health.firmware && health.firmware.version) {
+        healthHtml += `<div class="drawer-kv__item"><span class="drawer-kv__label">固件</span><span class="drawer-kv__value">${health.firmware.version}</span></div>`;
+      }
+      healthSection.innerHTML = healthHtml || '<div style="color:var(--fg-muted);font-size:var(--fs-xs);">暂无数据</div>';
+    }
+  } catch (err) {
+    console.warn('[flight] 加载健康诊断失败:', err);
+  }
+
+  // 异步加载任务信息
+  try {
+    const tasksRes = await drones.tasks(drone.id);
+    const tasks = (tasksRes && tasksRes.data) ? tasksRes.data : tasksRes;
+    const tasksSection = drawer.querySelector('#tasks-section');
+    if (tasks && tasksSection) {
+      const progress = tasks.progress || 0;
+      const progressColor = progress >= 75 ? 'var(--success)' : progress >= 50 ? 'var(--accent-cyan)' : 'var(--warn)';
+      tasksSection.innerHTML = `
+        <div style="margin-bottom:8px;"><b style="color:var(--accent-cyan);">${tasks.currentTask || '无任务'}</b></div>
+        ${tasks.taskStatus && tasks.taskStatus !== 'idle' ? `
+          <div style="margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <span style="color:var(--fg-muted);font-size:var(--fs-xs);">进度</span>
+              <span style="color:${progressColor};font-family:var(--font-display);">${progress}%</span>
+            </div>
+            <div style="width:100%;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;">
+              <div style="height:100%;width:${progress}%;background:${progressColor};border-radius:2px;transition:width 0.6s;"></div>
+            </div>
+          </div>
+          <div>航点: ${tasks.completedWaypoints || 0} / ${tasks.totalWaypoints || 0}</div>
+          ${tasks.estimatedTime ? `<div>预计剩余时间: ${Math.floor(tasks.estimatedTime / 60)}分${tasks.estimatedTime % 60}秒</div>` : ''}
+        ` : '<div style="color:var(--fg-muted);">当前无执行任务</div>'}
+      `;
+    }
+  } catch (err) {
+    console.warn('[flight] 加载任务信息失败:', err);
+  }
 }
 
 /* ---------- Tab Switching ---------- */

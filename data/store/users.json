@@ -2,7 +2,7 @@
   {
     "id": "USER-001",
     "username": "admin",
-    "password": "admin123",
+    "password": "$2b$10$NTqNccu8mPnctsMpvrlq6.PpOgG9/YQ4GO7A3eDn5A7teMkq26n/S",
     "role": "admin",
     "name": "系统管理员"
   },

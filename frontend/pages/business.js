@@ -3,7 +3,7 @@
  * 巡检计划管理 · 隐患工单流转 · 整改复核闭环
  * ===================================================================== */
 
-import { plans as plansApi, orders as ordersApi, drones as dronesApi } from '/js/api.js';
+import { plans as plansApi, orders as ordersApi, drones as dronesApi, request } from '/js/api.js';
 
 /* =====================================================================
  * 模块级状态
@@ -14,6 +14,7 @@ let detailPanelEl = null;
 let detailMaskEl = null;
 let currentTab = 'plans';
 let dronesCache = [];
+let alarmsCache = {};
 
 /* =====================================================================
  * 工具函数
@@ -57,14 +58,6 @@ const STATUS_FLOW = ['pending', 'processing', 'review', 'closed'];
 /* =====================================================================
  * 工具函数
  * ===================================================================== */
-function unwrap(res, fallback) {
-  if (Array.isArray(res)) return res;
-  if (res && Array.isArray(res.data)) return res.data;
-  if (res && Array.isArray(res.items)) return res.items;
-  if (res && res.data && Array.isArray(res.data.list)) return res.data.list;
-  return fallback;
-}
-
 function fmtDateTime(ts) {
   const d = new Date(ts);
   if (isNaN(d.getTime())) return '--';
@@ -73,7 +66,21 @@ function fmtDateTime(ts) {
 }
 
 function getAlarmInfo(alarmId) {
-  return ALARMS_MAP[alarmId] || { type: '未知', severity: 'medium' };
+  return alarmsCache[alarmId] || { type: '未知', severity: 'medium' };
+}
+
+/* =====================================================================
+ * 加载告警数据到缓存
+ * ===================================================================== */
+async function loadAlarmsCache() {
+  try {
+    const res = await request('/alarms');
+    const list = unwrap(res);
+    alarmsCache = {};
+    list.forEach((a) => { alarmsCache[a.id] = a; });
+  } catch (err) {
+    console.warn('[business] 加载告警缓存失败:', err.message || err);
+  }
 }
 
 /* =====================================================================
@@ -923,6 +930,7 @@ async function switchTab(tabKey, container) {
       });
     }
   } else if (tabKey === 'orders') {
+    await loadAlarmsCache();
     const ordersData = await loadOrders();
     renderOrdersTab(contentEl, ordersData);
     const refreshOrders = async () => {

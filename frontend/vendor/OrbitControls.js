@@ -1,15 +1,29 @@
-import {
-	EventDispatcher,
-	MOUSE,
-	Quaternion,
-	Spherical,
-	TOUCH,
-	Vector2,
-	Vector3,
-	Plane,
-	Ray,
-	MathUtils
-} from 'three';
+// UMD wrapper for OrbitControls
+(function (global, factory) {
+	if (typeof exports === 'object' && typeof module !== 'undefined') {
+		module.exports = factory(require('three'));
+	} else if (typeof define === 'function' && define.amd) {
+		define(['three'], factory);
+	} else {
+		var OrbitControls = factory(global.THREE);
+		global.OrbitControls = OrbitControls;
+		if (global.THREE) {
+			global.THREE.OrbitControls = OrbitControls;
+		}
+	}
+})(this, function (THREE) {
+	const {
+		EventDispatcher,
+		MOUSE,
+		Quaternion,
+		Spherical,
+		TOUCH,
+		Vector2,
+		Vector3,
+		Plane,
+		Ray,
+		MathUtils
+	} = THREE;
 
 // OrbitControls performs orbiting, dollying (zooming), and panning.
 // Unlike TrackballControls, it maintains the "up" direction object.up (+Y by default).
@@ -1414,4 +1428,6 @@ class OrbitControls extends EventDispatcher {
 
 }
 
-export { OrbitControls };
+return OrbitControls;
+
+});

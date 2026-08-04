@@ -22,6 +22,7 @@ function unwrap(res, fallback) {
   if (res && Array.isArray(res.data)) return res.data;
   if (res && Array.isArray(res.items)) return res.items;
   if (res && res.data && Array.isArray(res.data.list)) return res.data.list;
+  if (res && res.data && Array.isArray(res.data.items)) return res.data.items;
   return fallback;
 }
 

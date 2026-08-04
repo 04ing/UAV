@@ -36,7 +36,7 @@ async function loadAll() {
     orders.list(),
     geoFences.list(),
     ai.models(),
-    fetch('/api/alarms', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json())
+    fetch('/api/alarms', { headers: { Authorization: `Bearer ${localStorage.getItem('drone_token')}` } }).then(r => r.json())
   ]);
   
   const droneData = d.status === 'fulfilled' ? unwrap(d.value) : [];

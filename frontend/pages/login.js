@@ -64,7 +64,6 @@ export async function render(container) {
       const token = localStorage.getItem('drone_token');
       if (token) {
         window.location.hash = '#/dashboard';
-        window.location.reload();
       } else {
         showError(result && result.msg || '登录失败');
       }

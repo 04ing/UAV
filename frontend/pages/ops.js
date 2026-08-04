@@ -14,33 +14,6 @@ let auditDataCache = [];
 let auditPage = 1;
 const PAGE_SIZE = 10;
 
-/* =====================================================================
- * 兜底数据
- * ===================================================================== */
-const FALLBACK_USERS = [
-  { id: 'USER-001', username: 'admin', name: '系统管理员', role: 'admin', status: 'enabled', lastLogin: '2026-07-20T08:00:00Z' },
-  { id: 'USER-002', username: 'operator1', name: '张操作员', role: 'operator', status: 'enabled', lastLogin: '2026-07-20T08:10:00Z' },
-  { id: 'USER-003', username: 'viewer1', name: '李查看员', role: 'viewer', status: 'enabled', lastLogin: '2026-07-20T09:35:00Z' }
-];
-
-const FALLBACK_AUDIT = [
-  { id: 'LOG-001', user: 'admin', action: 'login', target: '-', ip: '192.168.1.10', timestamp: '2026-07-20T08:00:00Z', status: 'success' },
-  { id: 'LOG-002', user: 'admin', action: 'create', target: 'PLAN-001', ip: '192.168.1.10', timestamp: '2026-07-20T08:05:00Z', status: 'success' },
-  { id: 'LOG-003', user: 'operator1', action: 'login', target: '-', ip: '192.168.1.11', timestamp: '2026-07-20T08:10:00Z', status: 'success' },
-  { id: 'LOG-004', user: 'operator1', action: 'start_inspection', target: 'PLAN-001', ip: '192.168.1.11', timestamp: '2026-07-20T08:15:00Z', status: 'success' },
-  { id: 'LOG-005', user: 'operator1', action: 'ack_alarm', target: 'ALARM-001', ip: '192.168.1.11', timestamp: '2026-07-20T09:16:00Z', status: 'success' },
-  { id: 'LOG-006', user: 'admin', action: 'create_work_order', target: 'WO-001', ip: '192.168.1.10', timestamp: '2026-07-20T09:20:00Z', status: 'success' },
-  { id: 'LOG-007', user: 'operator1', action: 'update_work_order', target: 'WO-002', ip: '192.168.1.11', timestamp: '2026-07-20T09:30:00Z', status: 'success' },
-  { id: 'LOG-008', user: 'viewer1', action: 'login', target: '-', ip: '192.168.1.12', timestamp: '2026-07-20T09:35:00Z', status: 'success' },
-  { id: 'LOG-009', user: 'viewer1', action: 'view_alarm', target: 'ALARM-004', ip: '192.168.1.12', timestamp: '2026-07-20T09:40:00Z', status: 'success' },
-  { id: 'LOG-010', user: 'admin', action: 'deploy_model', target: 'MODEL-001', ip: '192.168.1.10', timestamp: '2026-07-20T09:45:00Z', status: 'success' },
-  { id: 'LOG-011', user: 'operator1', action: 'close_alarm', target: 'ALARM-004', ip: '192.168.1.11', timestamp: '2026-07-20T10:00:00Z', status: 'success' },
-  { id: 'LOG-012', user: 'admin', action: 'update_geofence', target: 'GEOFENCE-001', ip: '192.168.1.10', timestamp: '2026-07-20T10:05:00Z', status: 'success' },
-  { id: 'LOG-013', user: 'operator1', action: 'return_drone', target: 'DRONE-003', ip: '192.168.1.11', timestamp: '2026-07-20T10:10:00Z', status: 'success' },
-  { id: 'LOG-014', user: 'admin', action: 'create_user', target: 'USER-003', ip: '192.168.1.10', timestamp: '2026-07-20T10:15:00Z', status: 'success' },
-  { id: 'LOG-015', user: 'viewer1', action: 'logout', target: '-', ip: '192.168.1.12', timestamp: '2026-07-20T10:20:00Z', status: 'success' }
-];
-
 const ROLE_MAP = {
   admin: { label: '管理员', desc: '系统管理员' },
   operator: { label: '操作员', desc: '巡检操作员' },
@@ -581,7 +554,7 @@ async function loadUserList() {
   if (!container) return;
 
   try {
-    const res = await request.get('/api/auth/users');
+    const res = await request('/auth/users');
     let users = [];
     if (Array.isArray(res)) users = res;
     else if (res && Array.isArray(res.data)) users = res.data;
@@ -785,8 +758,17 @@ async function performAuditSearch(panel) {
       }
     }
 
-    // 兼容多种返回结构
-    const list = Array.isArray(data) ? data : (data && Array.isArray(data.data)) ? data.data : [];
+    // 兼容多种返回结构：后端返回 {code:0, data:{total, page, pageSize, items}}
+    let list = [];
+    if (Array.isArray(data)) {
+      list = data;
+    } else if (data && Array.isArray(data.data)) {
+      list = data.data;
+    } else if (data && data.data && Array.isArray(data.data.items)) {
+      list = data.data.items;
+    } else if (data && Array.isArray(data.items)) {
+      list = data.items;
+    }
     // 按时间倒序，最新在顶部
     list.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     auditDataCache = list;
@@ -794,8 +776,8 @@ async function performAuditSearch(panel) {
     renderAuditTab(panel, auditDataCache, auditPage);
   } catch (err) {
     console.warn('[ops] 审计日志查询失败，使用兜底数据:', err);
-    // 本地过滤兜底数据
-    let filtered = [...FALLBACK_AUDIT];
+    // 使用空数组作为兜底
+    let filtered = [];
     if (keyword) {
       const kw = keyword.toLowerCase();
       filtered = filtered.filter((l) =>
@@ -827,7 +809,7 @@ export function render(container) {
   cleanup();
   injectStyles();
   currentTab = 'users';
-  auditDataCache = [...FALLBACK_AUDIT];
+  auditDataCache = [];
   auditPage = 1;
 
   container.innerHTML = `

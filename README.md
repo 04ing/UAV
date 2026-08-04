@@ -8,6 +8,8 @@
 |------|------|
 | **综合态势大屏** | 全局运行概览，实时展示机队状态、告警统计与任务进度 |
 | **飞控管理** | 无人机列表、实时遥测、一键返航、电子围栏设置与地理围栏告警 |
+| **故障模拟** | 电机故障、低电量、GPS丢失、信号丢失、障碍物检测等故障注入与自动告警 |
+| **紧急告警** | 低电量自动返航、电量耗尽坠毁告警、最后位置记录与救援提示 |
 | **GIS 地图** | 基于 Leaflet 的二维地图，展示飞行轨迹、设备点位与巡检区域 |
 | **3D 场景** | 基于 Three.js 的无人机三维可视化与场景漫游 |
 | **AI 识别** | 图片上传识别，使用 YOLOv8 模型进行裂缝、剥落缺陷检测 |
@@ -27,8 +29,8 @@
                               │
 ┌─────────────────────────────────────────────────────────────┐
 │                      后端服务（云侧）                         │
-│  Node.js + Express + WebSocket（实时推送视频帧与告警）        │
-│  JWT 鉴权 / CORS / 请求日志                                  │
+│  Node.js + Express + WebSocket（实时推送遥测与告警）          │
+│  JWT 鉴权 / CORS / 请求日志 / 故障模拟引擎                   │
 └─────────────────────────────────────────────────────────────┘
                               │
 ┌─────────────────────────────────────────────────────────────┐
@@ -107,19 +109,24 @@ drone-inspection-system/
 │   ├── index.html            # 入口页面
 │   ├── css/                  # 基础样式与 CSS 变量
 │   ├── js/                   # 路由、API 封装与核心逻辑
+│   │   └── api.js            # API 客户端（fetch + WebSocket 封装）
 │   ├── pages/                # 各功能页面模块（按需加载）
 │   └── vendor/               # CDN 回退或本地第三方库
 ├── backend/                  # 后端（Node.js + Express）
 │   ├── server.js             # 服务入口：HTTP + WebSocket
 │   ├── routes/               # API 路由（飞控/AI/业务/运维/元数据）
+│   │   ├── drones.js         # 无人机路由 + 故障模拟接口
+│   │   └── business.js       # 巡检计划/工单/告警路由
 │   ├── middleware/           # 鉴权、日志中间件
-│   ├── utils/                # 统一响应结构封装
-│   └── data/                 # 数据文件
+│   ├── utils/                # DJI API适配器、事件总线、响应封装
+│   │   ├── djiApiAdapter.js  # 无人机数据模拟 + 故障引擎 + 告警生成
+│   │   └── eventEmitter.js   # 事件总线（告警/遥测/坠毁推送）
+│   └── data/                 # 文件系统数据存储
+│       └── dataStore.js      # 持久化存储（drones/alarms/workOrders 等）
+├── data/store/               # 运行时数据（JSON 持久化）
 ├── yolo_server.py            # YOLOv8 推理服务（独立 Python 服务）
 ├── yolo_inference.py         # YOLO 推理脚本（备用）
-├── best.pt                   # YOLOv8 预训练模型权重
-├── leftImg8bit/              # 训练数据集
-├── ultralytics_settings.yaml # Ultralytics 配置文件
+├── restart.js                # 服务重启脚本
 ├── package.json
 └── README.md
 ```
@@ -158,15 +165,31 @@ drone-inspection-system/
 | 分类 | 路径前缀 | 说明 |
 |------|----------|------|
 | 飞控 | `/api/drones`、`/api/geo-fences` | 机队管理、遥测、返航、电子围栏 |
+| 故障模拟 | `/api/drones/:id/fault` | 故障触发、清除、查询（电机故障/低电量/GPS丢失/信号丢失/障碍物） |
 | AI | `/api/ai` | 模型列表、图片识别、模型下发与进度查询 |
-| 业务 | `/api/inspection-plans`、`/api/work-orders` | 巡检计划与工单管理 |
+| 业务 | `/api/inspection-plans`、`/api/work-orders`、`/api/alarms` | 巡检计划、工单与告警管理 |
 | 运维 | `/api/auth`、`/api/audit-logs` | 登录鉴权与审计日志 |
 | 接口元数据 | `/api/meta` | 端点清单与在线文档 |
 
 ### WebSocket 实时推送
 
-- `/ws/video` —— 视频帧推送（1Hz）
-- `/ws/alarm` —— 告警事件推送（1Hz）
+- `/ws/video` —— 视频帧推送
+- `/ws/alarm` —— 告警事件推送（含紧急坠毁告警）
+- `/api/drones/:id/telemetry` —— 遥测数据实时推送
+
+### 故障模拟引擎
+
+系统内置完整的故障注入与告警机制：
+
+| 故障类型 | 说明 | 触发行为 |
+|----------|------|----------|
+| `motor_failure` | 电机故障 | 速度骤降、高度下降、自动返航 |
+| `low_battery` | 低电量 | 电量低于25%自动返航 |
+| `gps_lost` | GPS丢失 | 位置随机漂移 |
+| `signal_lost` | 遥控信号丢失 | 信号变为弱/无 |
+| `obstacle` | 障碍物检测 | 速度降低 |
+
+**电量耗尽处理流程**：电量耗尽 → 状态变为 `offline` → 生成 `critical` 级紧急告警 → 记录最后位置 → WebSocket 推送至前端 → 支持故障清除后恢复待机状态。
 
 ## 开发说明
 

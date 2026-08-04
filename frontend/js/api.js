@@ -28,17 +28,13 @@ function setToken(token) {
 }
 
 /**
- * 跳转到登录页（占位实现）
+ * 跳转到登录页
  */
 function redirectToLogin() {
-  // 后续 Task 接入登录页时：window.location.href = '/pages/login.html';
-  // 简化流程下仅清 token 并刷新
   setToken(null);
+  localStorage.removeItem('drone_user_name');
   if (!window.location.hash.startsWith('#/login')) {
-    // 触发 app.js 的 hashchange 处理（如存在 login 路由）
-    // 当前简化方案：提示并刷新
-    console.warn('[api] 鉴权失败，跳转登录页（占位：刷新当前页）');
-    // window.location.reload();
+    window.location.hash = '#/login';
   }
 }
 
@@ -151,7 +147,21 @@ const drones = {
   /** 一键返航 */
   returnHome: (id) => request(`/drones/${id}/return-home`, { method: 'POST' }),
   /** 实时遥测数据（WebSocket） */
-  telemetry: (id, onMessage) => connectWS(`/drones/${id}/telemetry`, onMessage)
+  telemetryWS: (id, onMessage) => connectWS(`/drones/${id}/telemetry`, onMessage),
+  /** 获取遥测数据（HTTP） */
+  telemetry: (id) => request(`/drones/${id}/telemetry`, { method: 'GET' }),
+  /** 健康诊断 */
+  health: (id) => request(`/drones/${id}/health`, { method: 'GET' }),
+  /** 任务信息 */
+  tasks: (id) => request(`/drones/${id}/tasks`, { method: 'GET' }),
+  /** 触发故障模拟 */
+  triggerFault: (id, faultType) => request(`/drones/${id}/fault`, { method: 'POST', body: JSON.stringify({ faultType }) }),
+  /** 清除故障模拟 */
+  clearFault: (id) => request(`/drones/${id}/fault`, { method: 'DELETE' }),
+  /** 查询故障状态 */
+  getFault: (id) => request(`/drones/${id}/fault`, { method: 'GET' }),
+  /** 获取故障类型列表 */
+  faultTypes: () => request('/drones/fault-types/list', { method: 'GET' }),
 };
 
 /* ---------- AI 智能识别 ---------- */

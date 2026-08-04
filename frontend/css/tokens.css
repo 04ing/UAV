@@ -34,8 +34,8 @@
   --shadow-glow: 0 0 24px rgba(0, 229, 255, 0.3);
 
   /* ---------- 字体族 ---------- */
-  --font-display: 'Oxanium', 'Noto Sans SC', sans-serif;
-  --font-body: 'Noto Sans SC', system-ui, sans-serif;
+  --font-display: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-body: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 
   /* ---------- 字号 ---------- */
   --fs-xs: 12px;

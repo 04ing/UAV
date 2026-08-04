@@ -1,5 +1,257 @@
 [
   {
+    "id": "ALARM-031",
+    "type": "无人机失联",
+    "severity": "critical",
+    "droneId": "DRONE-003",
+    "lat": 30.60905,
+    "lng": 114.31405000000001,
+    "timestamp": "2026-08-04T03:39:48.428Z",
+    "status": "pending",
+    "description": "🚨 紧急！无人机 DRONE-003 电量耗尽坠毁，最后位置: 30.609050, 114.314050，请立即组织救援！",
+    "emergency": true,
+    "lastKnownPosition": {
+      "lat": 30.60905,
+      "lng": 114.31405000000001,
+      "altitude": 64
+    }
+  },
+  {
+    "id": "ALARM-030",
+    "type": "无人机失联",
+    "severity": "critical",
+    "droneId": "DRONE-003",
+    "lat": 30.60905,
+    "lng": 114.31405000000001,
+    "timestamp": "2026-08-04T03:37:34.616Z",
+    "status": "pending",
+    "description": "🚨 紧急！无人机 DRONE-003 电量耗尽坠毁，最后位置: 30.609050, 114.314050，请立即组织救援！",
+    "emergency": true,
+    "lastKnownPosition": {
+      "lat": 30.60905,
+      "lng": 114.31405000000001,
+      "altitude": 64
+    }
+  },
+  {
+    "id": "ALARM-029",
+    "type": "无人机失联",
+    "severity": "critical",
+    "droneId": "DRONE-005",
+    "lat": 30.597640000000002,
+    "lng": 114.305,
+    "timestamp": "2026-08-04T03:24:43.102Z",
+    "status": "pending",
+    "description": "🚨 紧急！无人机 DRONE-005 电量耗尽坠毁，最后位置: 30.597640, 114.305000，请立即组织救援！",
+    "emergency": true,
+    "lastKnownPosition": {
+      "lat": 30.597640000000002,
+      "lng": 114.305,
+      "altitude": 1
+    }
+  },
+  {
+    "id": "ALARM-028",
+    "type": "无人机失联",
+    "severity": "critical",
+    "droneId": "DRONE-002",
+    "lat": 30.599,
+    "lng": 114.308,
+    "timestamp": "2026-08-04T03:22:02.752Z",
+    "status": "pending",
+    "description": "🚨 紧急！无人机 DRONE-002 电量耗尽坠毁，最后位置: 30.599000, 114.308000，请立即组织救援！",
+    "emergency": true,
+    "lastKnownPosition": {
+      "lat": 30.599,
+      "lng": 114.308,
+      "altitude": 20
+    }
+  },
+  {
+    "id": "ALARM-027",
+    "type": "无人机失联",
+    "severity": "critical",
+    "droneId": "DRONE-002",
+    "lat": 30.5985,
+    "lng": 114.307,
+    "timestamp": "2026-08-04T03:22:01.473Z",
+    "status": "pending",
+    "description": "🚨 紧急！无人机 DRONE-002 电量耗尽坠毁，最后位置: 30.598500, 114.307000，请立即组织救援！",
+    "emergency": true,
+    "lastKnownPosition": {
+      "lat": 30.5985,
+      "lng": 114.307,
+      "altitude": 25
+    }
+  },
+  {
+    "id": "ALARM-026",
+    "type": "低电量告警",
+    "severity": "warning",
+    "droneId": "DRONE-002",
+    "lat": 30.598,
+    "lng": 114.298,
+    "timestamp": "2026-08-04T03:22:01.424Z",
+    "status": "pending",
+    "description": "无人机电量低于25%，触发低电量告警"
+  },
+  {
+    "id": "ALARM-025",
+    "type": "无人机失联",
+    "severity": "critical",
+    "droneId": "DRONE-005",
+    "lat": 30.60208,
+    "lng": 114.30428,
+    "timestamp": "2026-08-04T03:21:17.426Z",
+    "status": "pending",
+    "description": "🚨 紧急！无人机 DRONE-005 电量耗尽坠毁，最后位置: 30.602080, 114.304280，请立即组织救援！",
+    "emergency": true,
+    "lastKnownPosition": {
+      "lat": 30.60208,
+      "lng": 114.30428,
+      "altitude": 7
+    }
+  },
+  {
+    "id": "ALARM-024",
+    "type": "无人机失联",
+    "severity": "critical",
+    "droneId": "DRONE-001",
+    "lat": 30.5976,
+    "lng": 114.305,
+    "timestamp": "2026-08-04T03:17:36.361Z",
+    "status": "pending",
+    "description": "🚨 紧急！无人机 DRONE-001 电量耗尽坠毁，最后位置: 30.597600, 114.305000，请立即组织救援！",
+    "emergency": true,
+    "lastKnownPosition": {
+      "lat": 30.5976,
+      "lng": 114.305,
+      "altitude": 50
+    }
+  },
+  {
+    "id": "ALARM-023",
+    "type": "低电量告警",
+    "severity": "warning",
+    "droneId": "DRONE-001",
+    "lat": 30.6012,
+    "lng": 114.3025,
+    "timestamp": "2026-08-04T03:17:36.292Z",
+    "status": "pending",
+    "description": "无人机电量低于25%，触发低电量告警"
+  },
+  {
+    "id": "ALARM-022",
+    "type": "无人机失联",
+    "severity": "critical",
+    "droneId": "DRONE-001",
+    "lat": 30.5976,
+    "lng": 114.305,
+    "timestamp": "2026-08-04T03:13:12.866Z",
+    "status": "pending",
+    "description": "🚨 紧急！无人机 DRONE-001 电量耗尽坠毁，最后位置: 30.597600, 114.305000，请立即组织救援！",
+    "emergency": true,
+    "lastKnownPosition": {
+      "lat": 30.5976,
+      "lng": 114.305,
+      "altitude": 50
+    }
+  },
+  {
+    "id": "ALARM-021",
+    "type": "低电量告警",
+    "severity": "warning",
+    "droneId": "DRONE-001",
+    "lat": 30.6012,
+    "lng": 114.3025,
+    "timestamp": "2026-08-04T03:13:12.828Z",
+    "status": "pending",
+    "description": "无人机电量低于25%，触发低电量告警"
+  },
+  {
+    "id": "ALARM-020",
+    "type": "无人机失联",
+    "severity": "critical",
+    "droneId": "DRONE-TEST",
+    "lat": 30.59764,
+    "lng": 114.305,
+    "timestamp": "2026-08-04T02:54:38.552Z",
+    "status": "pending",
+    "description": "🚨 紧急！无人机 DRONE-TEST 电量耗尽坠毁，最后位置: 30.597640, 114.305000，请立即组织救援！",
+    "emergency": true,
+    "lastKnownPosition": {
+      "lat": 30.59764,
+      "lng": 114.305,
+      "altitude": 25
+    }
+  },
+  {
+    "id": "ALARM-019",
+    "type": "低电量告警",
+    "severity": "warning",
+    "droneId": "DRONE-005",
+    "lat": 30.60728,
+    "lng": 114.29808,
+    "timestamp": "2026-08-04T02:51:30.685Z",
+    "status": "pending",
+    "description": "无人机电量低于25%，触发低电量告警"
+  },
+  {
+    "id": "ALARM-018",
+    "type": "低电量告警",
+    "severity": "warning",
+    "droneId": "DRONE-005",
+    "lat": 30.597640000000002,
+    "lng": 114.305,
+    "timestamp": "2026-08-04T02:50:42.514Z",
+    "status": "pending",
+    "description": "无人机电量低于25%，触发低电量告警"
+  },
+  {
+    "id": "ALARM-017",
+    "type": "低电量告警",
+    "severity": "warning",
+    "droneId": "DRONE-005",
+    "lat": 30.597640000000002,
+    "lng": 114.305,
+    "timestamp": "2026-08-04T02:49:36.256Z",
+    "status": "pending",
+    "description": "无人机电量低于25%，触发低电量告警"
+  },
+  {
+    "id": "ALARM-016",
+    "type": "低电量告警",
+    "severity": "warning",
+    "droneId": "DRONE-005",
+    "lat": 30.597640000000002,
+    "lng": 114.305,
+    "timestamp": "2026-08-04T02:47:07.691Z",
+    "status": "pending",
+    "description": "无人机电量低于25%，触发低电量告警"
+  },
+  {
+    "id": "ALARM-015",
+    "type": "低电量告警",
+    "severity": "warning",
+    "droneId": "DRONE-006",
+    "lat": 30.60212,
+    "lng": 114.31518,
+    "timestamp": "2026-08-04T02:11:46.173Z",
+    "status": "pending",
+    "description": "无人机电量低于25%，触发低电量告警"
+  },
+  {
+    "id": "ALARM-014",
+    "type": "电机故障",
+    "severity": "critical",
+    "droneId": "DRONE-001",
+    "lat": 30.601936,
+    "lng": 114.3033,
+    "timestamp": "2026-08-04T02:01:48.333Z",
+    "status": "pending",
+    "description": "无人机电机故障，立即返航！"
+  },
+  {
     "id": "ALARM-013",
     "type": "??",
     "severity": "high",

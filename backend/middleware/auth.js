@@ -7,7 +7,7 @@ const JWT_SECRET = 'drone-inspection-demo-secret-2026';
 const JWT_EXPIRES_IN = '8h';
 
 // 鉴权白名单（不需要 token 即可访问）
-const WHITELIST = ['/api/auth/login', '/api/meta/endpoints'];
+const WHITELIST = ['/api/auth/login', '/api/meta/endpoints', '/api/meta/health'];
 
 function signToken(payload) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
@@ -16,6 +16,10 @@ function signToken(payload) {
 function requireAuth(req, res, next) {
   // 仅业务 API 需要鉴权；静态资源、SPA、WebSocket 升级等跳过
   if (!req.path.startsWith('/api')) {
+    return next();
+  }
+  // /api 根路径是前端接口管理页面，跳过认证
+  if (req.path === '/api') {
     return next();
   }
   // 白名单跳过

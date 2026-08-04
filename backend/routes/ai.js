@@ -85,6 +85,7 @@ function checkYOLOHealth() {
 
 function callYOLOServer(base64Image) {
   return new Promise((resolve, reject) => {
+    // YOLO服务期望接收base64字符串
     const options = {
       hostname: 'localhost',
       port: 8080,

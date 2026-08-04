@@ -1,7 +1,12 @@
 require('dotenv').config();
 
-process.env.ULTRALYTICS_SETTINGS = 'e:\\无人机智能巡检系统\\ultralytics_settings.yaml';
-process.env.HOME = 'e:\\无人机智能巡检系统';
+// 仅在未设置时提供默认值，避免硬编码路径导致跨机器运行失败
+if (!process.env.ULTRALYTICS_SETTINGS) {
+  process.env.ULTRALYTICS_SETTINGS = '';
+}
+if (!process.env.HOME) {
+  process.env.HOME = require('path').dirname(__dirname);
+}
 
 const express = require('express');
 const cors = require('cors');
@@ -31,6 +36,7 @@ app.use(logger);
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 app.use('/api/auth', authRouter);
+app.use('/api/meta', metaRouter);
 
 app.use(requireAuth);
 
@@ -41,11 +47,11 @@ app.use('/api/inspection-plans', plansRouter);
 app.use('/api/work-orders', workOrdersRouter);
 app.use('/api/alarms', alarmsRouter);
 app.use('/api/audit-logs', auditLogsRouter);
-app.use('/api/meta', metaRouter);
 
 const frontendIndex = path.join(__dirname, '../frontend/index.html');
 app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api') || req.path.startsWith('/ws')) {
+  // 仅后端API子路径走API路由，/api 根路径返回前端页面（接口管理页）
+  if (req.path.startsWith('/api/') || req.path.startsWith('/ws')) {
     return next();
   }
   res.sendFile(frontendIndex, (err) => {
@@ -56,14 +62,25 @@ app.get('*', (req, res, next) => {
 });
 
 app.use((err, req, res, next) => {
-  console.error('[ERROR]', err.stack || err.message);
+  const status = err.status || 500;
+  const message = err.message || '服务器内部错误';
+  const timestamp = new Date().toISOString();
+  
+  console.error(`[${timestamp}] ERROR ${status} ${req.method} ${req.originalUrl}`);
+  console.error('[ERROR] Message:', message);
+  if (err.stack && process.env.NODE_ENV !== 'production') {
+    console.error('[ERROR] Stack:', err.stack);
+  }
+  
   if (res.headersSent) {
     return next(err);
   }
-  res.status(err.status || 500).json({
+  
+  res.status(status).json({
     code: -1,
-    msg: process.env.NODE_ENV === 'production' ? '服务器内部错误' : err.message,
-    data: null
+    msg: process.env.NODE_ENV === 'production' && status >= 500 ? '服务器内部错误' : message,
+    data: null,
+    timestamp
   });
 });
 

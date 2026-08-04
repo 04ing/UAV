@@ -840,7 +840,7 @@ async function loadKPIs(container) {
   try {
     const [dronesRes, alarmsRes] = await Promise.all([
       dronesApi.list(),
-      fetch('/api/alarms', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json())
+      fetch('/api/alarms', { headers: { Authorization: `Bearer ${localStorage.getItem('drone_token')}` } }).then(r => r.json())
     ]);
 
     let drones = null;

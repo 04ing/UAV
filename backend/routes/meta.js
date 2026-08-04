@@ -48,4 +48,9 @@ router.get('/endpoints', (req, res) => {
   success(res, ENDPOINTS, '获取接口元数据成功');
 });
 
+// GET /api/meta/health
+router.get('/health', (req, res) => {
+  success(res, { status: 'healthy', timestamp: new Date().toISOString() }, '服务运行正常');
+});
+
 module.exports = router;

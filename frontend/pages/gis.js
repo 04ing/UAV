@@ -932,7 +932,7 @@ export function render(container) {
   Promise.allSettled([
     drones.list(),
     geoFences.list(),
-    fetch('/api/alarms', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json())
+    fetch('/api/alarms', { headers: { Authorization: `Bearer ${localStorage.getItem('drone_token')}` } }).then(r => r.json())
   ]).then(([drRes, gfRes, aRes]) => {
     const droneList = drRes.status === 'fulfilled' ? unwrap(drRes.value) : [];
     const fenceList = gfRes.status === 'fulfilled' ? unwrap(gfRes.value) : [];

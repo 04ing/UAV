@@ -137,9 +137,9 @@ workOrdersRouter.delete('/:id', (req, res) => {
 const alarmsRouter = express.Router();
 
 alarmsRouter.get('/', (req, res) => {
-  const { status, severity, type } = req.query;
+  const { status, severity, type, droneId } = req.query;
   let list = DataStore.alarms.getAll();
-  
+
   if (status) {
     list = list.filter((a) => a.status === status);
   }
@@ -149,7 +149,10 @@ alarmsRouter.get('/', (req, res) => {
   if (type) {
     list = list.filter((a) => a.type === type);
   }
-  
+  if (droneId) {
+    list = list.filter((a) => a.droneId === droneId);
+  }
+
   success(res, list, '获取告警列表成功');
 });
 

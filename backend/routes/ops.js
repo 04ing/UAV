@@ -18,11 +18,12 @@ authRouter.post('/login', async (req, res) => {
   }
 
   let isValid = false;
-  try {
+  const isBcryptHash = user.password.length >= 60 && user.password.startsWith('$2b$');
+  if (isBcryptHash) {
     isValid = await bcrypt.compare(password, user.password);
-  } catch (e) {
+  } else {
     isValid = user.password === password;
-    if (isValid && user.password.length < 60) {
+    if (isValid) {
       const hash = await bcrypt.hash(password, 10);
       DataStore.users.update(user.id, { password: hash });
     }
