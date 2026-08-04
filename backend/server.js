@@ -26,7 +26,7 @@ const { authRouter, auditLogsRouter } = require('./routes/ops');
 const metaRouter = require('./routes/meta');
 
 const app = express();
-const PORT = 3000;
+const PORT = parseInt(process.env.PORT, 10) || 3000;
 
 app.use(cors());
 app.use(express.json());

@@ -41,6 +41,9 @@ coverage/
 # Runtime data store (auto-generated JSON)
 data/store/
 
+# Runtime logs
+logs/
+
 # Temp
 temp/
 .temp/
