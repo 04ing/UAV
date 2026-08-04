@@ -35,6 +35,12 @@ train_yolo.py
 # Node modules
 node_modules/
 
+# Test coverage
+coverage/
+
+# Runtime data store (auto-generated JSON)
+data/store/
+
 # Temp
 temp/
 .temp/
