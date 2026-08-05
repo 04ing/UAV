@@ -40,6 +40,7 @@ const ENDPOINTS = [
 
   // ---------- 运维 ----------
   { category: '运维', method: 'POST',   path: '/api/auth/login',                   description: '用户登录',           params: '{username, password}',                    response: '{code:0, data: {token, user}}' },
+  { category: '运维', method: 'POST',   path: '/api/auth/register',                description: '用户注册',           params: '{username, password, name?}',            response: '{code:0, data: {token, user}}' },
   { category: '运维', method: 'GET',    path: '/api/auth/me',                      description: '当前用户信息',       params: 'Authorization: Bearer <token>',           response: '{code:0, data: User}' },
   { category: '运维', method: 'GET',    path: '/api/audit-logs',                    description: '审计日志（支持 ?keyword=&startDate=&endDate=）', params: 'keyword?,startDate?,endDate?', response: '{code:0, data: [AuditLog]}' },
 

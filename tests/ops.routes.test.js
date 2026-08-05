@@ -40,6 +40,10 @@ const CLEANUP_USERNAMES = [
   'test',
   'test_no_pass',
   'test_no_role',
+  'reg_test_user',
+  'reg_short',
+  'reg_short_pw',
+  'reg_dup',
 ];
 
 function cleanupTestUsers() {
@@ -163,6 +167,109 @@ describe('Ops 路由 - 认证模块', () => {
 
       // 清理
       DataStore.users.delete(plainUser.id);
+    });
+  });
+
+  // ---------- POST /register ----------
+  describe('POST /api/auth/register - 用户注册', () => {
+    test('应成功注册新用户并返回 Token', async () => {
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({ username: 'reg_test_user', password: 'RegTest@123', name: '注册测试' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.code).toBe(0);
+      expect(res.body.data.token).toBeDefined();
+      expect(res.body.data.user.username).toBe('reg_test_user');
+      expect(res.body.data.user.role).toBe('viewer');
+      expect(res.body.data.user.name).toBe('注册测试');
+    });
+
+    test('注册后密码应为 bcrypt 哈希', async () => {
+      const user = DataStore.users.getByUsername('reg_test_user');
+      expect(user).toBeDefined();
+      expect(user.password.startsWith('$2b$')).toBe(true);
+      expect(user.password.length).toBeGreaterThanOrEqual(60);
+    });
+
+    test('未提供 name 时应默认使用 username', async () => {
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({ username: 'reg_noname', password: 'RegTest@456' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.user.name).toBe('reg_noname');
+
+      // 清理
+      DataStore.users.delete(res.body.data.user.id);
+    });
+
+    test('用户名已存在应返回 400', async () => {
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({ username: 'admin', password: 'whatever123' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.msg).toContain('已存在');
+    });
+
+    test('缺少 username 应返回 400', async () => {
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({ password: 'test123456' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.msg).toContain('必填');
+    });
+
+    test('缺少 password 应返回 400', async () => {
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({ username: 'reg_no_pass' });
+
+      expect(res.status).toBe(400);
+    });
+
+    test('用户名少于 3 字符应返回 400', async () => {
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({ username: 'ab', password: 'test123456' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.msg).toContain('至少 3');
+    });
+
+    test('密码少于 6 字符应返回 400', async () => {
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({ username: 'reg_short_pw', password: '12345' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.msg).toContain('至少 6');
+    });
+
+    test('注册无需 Token（白名单）', async () => {
+      // 不携带 Authorization 头
+      const res = await request(app)
+        .post('/api/auth/register')
+        .send({ username: 'reg_whitelist', password: 'WhiteTest@1' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.token).toBeDefined();
+
+      // 清理
+      DataStore.users.delete(res.body.data.user.id);
+    });
+
+    test('注册成功后用新账号登录应返回 Token', async () => {
+      // 用刚注册的账号登录
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({ username: 'reg_test_user', password: 'RegTest@123' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.token).toBeDefined();
+      expect(res.body.data.user.username).toBe('reg_test_user');
     });
   });
 

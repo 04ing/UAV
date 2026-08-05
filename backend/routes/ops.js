@@ -6,6 +6,67 @@ const { signToken } = require('../middleware/auth');
 
 const authRouter = express.Router();
 
+authRouter.post('/register', async (req, res) => {
+  const { username, password, name } = req.body || {};
+
+  // 参数校验
+  if (!username || !password) {
+    return error(res, '用户名和密码必填', 400);
+  }
+  if (username.length < 3) {
+    return error(res, '用户名至少 3 个字符', 400);
+  }
+  if (password.length < 6) {
+    return error(res, '密码至少 6 个字符', 400);
+  }
+
+  // 检查用户名是否已存在
+  if (DataStore.users.getByUsername(username)) {
+    return error(res, '用户名已存在', 400);
+  }
+
+  // 创建用户（默认 viewer 角色）
+  const hash = await bcrypt.hash(password, 10);
+  const users = DataStore.users.getAll();
+  const newUser = {
+    id: `USER-${String(users.length + 1).padStart(3, '0')}`,
+    username,
+    password: hash,
+    role: 'viewer',
+    name: name || username,
+    createdAt: new Date().toISOString()
+  };
+
+  DataStore.users.add(newUser);
+
+  // 自动签发 token，注册后无需再次登录
+  const token = signToken({
+    id: newUser.id,
+    username: newUser.username,
+    role: newUser.role,
+    name: newUser.name
+  });
+
+  DataStore.auditLogs.add({
+    id: `LOG-${String(Date.now()).slice(-6)}`,
+    user: newUser.username,
+    action: 'register',
+    target: newUser.id,
+    ip: req.ip || '-',
+    timestamp: new Date().toISOString()
+  });
+
+  success(res, {
+    token,
+    user: {
+      id: newUser.id,
+      username: newUser.username,
+      role: newUser.role,
+      name: newUser.name
+    }
+  }, '注册成功');
+});
+
 authRouter.post('/login', async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) {

@@ -1110,6 +1110,25 @@ canvas {
   margin-left: 4px;
 }
 
+.login-card__switch {
+  text-align: center;
+  font-size: var(--fs-sm);
+  color: var(--fg-secondary);
+  margin: 0;
+}
+
+.login-card__switch a {
+  color: var(--accent-cyan);
+  text-decoration: none;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+
+.login-card__switch a:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
 /* 减弱动画偏好 */
 @media (prefers-reduced-motion: reduce) {
   *,

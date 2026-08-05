@@ -84,7 +84,7 @@ async function request(path, options = {}) {
     if (isJson) {
       try {
         const errBody = await response.json();
-        detail = errBody.message || errBody.error || detail;
+        detail = errBody.msg || errBody.message || errBody.error || detail;
       } catch (_) { /* ignore */ }
     }
     const err = new Error(detail);
@@ -202,6 +202,21 @@ const auth = {
     const result = await request('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ username, password })
+    });
+    const data = result && result.data ? result.data : result;
+    if (data && data.token) {
+      setToken(data.token);
+      if (data.user && data.user.name) {
+        localStorage.setItem('drone_user_name', data.user.name);
+      }
+    }
+    return result;
+  },
+  /** 注册，成功后自动保存 token（无需再次登录） */
+  register: async (username, password, name) => {
+    const result = await request('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ username, password, name })
     });
     const data = result && result.data ? result.data : result;
     if (data && data.token) {

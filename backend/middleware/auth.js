@@ -7,7 +7,7 @@ const JWT_SECRET = 'drone-inspection-demo-secret-2026';
 const JWT_EXPIRES_IN = '8h';
 
 // 鉴权白名单（不需要 token 即可访问）
-const WHITELIST = ['/api/auth/login', '/api/meta/endpoints', '/api/meta/health'];
+const WHITELIST = ['/api/auth/login', '/api/auth/register', '/api/meta/endpoints', '/api/meta/health'];
 
 function signToken(payload) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
