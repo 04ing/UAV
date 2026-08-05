@@ -36,6 +36,7 @@ const PORT = parseInt(process.env.PORT, 10) || 3000;
 app.use(helmet({
   contentSecurityPolicy: false,  // 前端用了内联脚本，关闭 CSP 避免阻断
   crossOriginEmbedderPolicy: false,
+  crossOriginOpenerPolicy: false,  // HTTP 环境下 COOP 会被浏览器忽略并警告
 }));
 
 // 2. 路径遍历防护：拦截包含 %2F.. 或 ../ 的路径遍历攻击
