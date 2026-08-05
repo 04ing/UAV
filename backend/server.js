@@ -77,10 +77,10 @@ app.use(express.static(path.join(__dirname, '../frontend'), {
   dotfiles: 'deny',   // 禁止访问 .git 等隐藏文件
 }));
 
+app.use(requireAuth);
+
 app.use('/api/auth', authLimiter, authRouter);
 app.use('/api/meta', metaRouter);
-
-app.use(requireAuth);
 
 app.use('/api/drones', dronesRouter);
 app.use('/api/geo-fences', geoFencesRouter);
