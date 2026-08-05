@@ -46,6 +46,7 @@ logs/
 
 # ⚠️ Server credentials (sensitive) 服务器连接密码
 deploy-aliyun.js
+deploy-aliyun-incremental.js
 deploy-to-aliyun.ps1
 
 # Temp
