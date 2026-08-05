@@ -1,5 +1,17 @@
 [
   {
+    "id": "TEST-LOG-001",
+    "action": "login",
+    "userId": "USER-001",
+    "timestamp": "2026-08-04T04:46:11.203Z"
+  },
+  {
+    "id": "TEST-LOG-001",
+    "action": "login",
+    "userId": "USER-001",
+    "timestamp": "2026-08-04T04:43:40.962Z"
+  },
+  {
     "id": "LOG-120135",
     "user": "admin",
     "action": "login",

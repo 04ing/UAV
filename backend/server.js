@@ -13,6 +13,8 @@ const cors = require('cors');
 const path = require('path');
 const http = require('http');
 const { WebSocketServer } = require('ws');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 const { logger } = require('./middleware/logger');
 const { requireAuth } = require('./middleware/auth');
@@ -28,14 +30,53 @@ const metaRouter = require('./routes/meta');
 const app = express();
 const PORT = parseInt(process.env.PORT, 10) || 3000;
 
+// ============ 安全中间件 ============
+
+// 1. Helmet：设置安全响应头（XSS 防护、内容类型嗅探防护、HSTS 等）
+app.use(helmet({
+  contentSecurityPolicy: false,  // 前端用了内联脚本，关闭 CSP 避免阻断
+  crossOriginEmbedderPolicy: false,
+}));
+
+// 2. 路径遍历防护：拦截包含 %2F.. 或 ../ 的路径遍历攻击
+app.use((req, res, next) => {
+  const decoded = decodeURIComponent(req.path);
+  if (decoded.includes('../') || decoded.includes('..\\') || /%2e%2e/i.test(req.url)) {
+    return res.status(403).json({ code: -1, msg: '请求路径不合法', data: null });
+  }
+  next();
+});
+
+// 3. 全局限流：每个 IP 每 15 分钟最多 300 次请求
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { code: -1, msg: '请求过于频繁，请稍后重试', data: null },
+});
+app.use(limiter);
+
+// 4. 登录接口加强限流：每个 IP 每 15 分钟最多 20 次登录尝试
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { code: -1, msg: '登录尝试次数过多，请 15 分钟后重试', data: null },
+});
+
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(logger);
 
-app.use(express.static(path.join(__dirname, '../frontend')));
+// 静态文件根目录限定（防止目录穿越）
+app.use(express.static(path.join(__dirname, '../frontend'), {
+  dotfiles: 'deny',   // 禁止访问 .git 等隐藏文件
+}));
 
-app.use('/api/auth', authRouter);
+app.use('/api/auth', authLimiter, authRouter);
 app.use('/api/meta', metaRouter);
 
 app.use(requireAuth);

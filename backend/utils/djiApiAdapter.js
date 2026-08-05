@@ -134,7 +134,18 @@ const FAULT_DURATION = 30000; // 30秒
  * @returns {object} - 触发结果
  */
 function triggerFault(droneId, faultType) {
-  const drone = mockDrones.find((d) => d.id === droneId);
+  let drone = mockDrones.find((d) => d.id === droneId);
+
+  // 如果 mockDrones 中没有，尝试从 DataStore 同步（通过 POST /api/drones/upload 注册的无人机）
+  if (!drone) {
+    const DataStore = require('../data/dataStore');
+    const dsDrone = DataStore.drones.getById(droneId);
+    if (dsDrone) {
+      mockDrones.push(dsDrone);
+      drone = mockDrones[mockDrones.length - 1];
+    }
+  }
+
   if (!drone) {
     return { success: false, message: `未找到无人机: ${droneId}` };
   }

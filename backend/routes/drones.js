@@ -90,7 +90,7 @@ dronesRouter.post('/upload', (req, res) => {
 
 dronesRouter.post('/:id/telemetry', (req, res) => {
   const { lat, lng, battery, signal, altitude, speed, heading, status } = req.body || {};
-  
+
   if (lat === undefined || lng === undefined) {
     return error(res, '参数不合法：lat 和 lng 必填', 400);
   }
@@ -107,6 +107,16 @@ dronesRouter.post('/:id/telemetry', (req, res) => {
   if (speed !== undefined) updates.speed = speed;
   if (heading !== undefined) updates.heading = heading;
   if (status !== undefined) updates.status = status;
+
+  // 低电量自动返航逻辑（与 djiApiAdapter.js 的 mock 定时器保持一致）
+  if (battery !== undefined) {
+    if (battery <= 0) {
+      updates.status = 'offline';
+      updates.speed = 0;
+    } else if (battery <= 25 && (status === 'inspecting' || updates.status === 'inspecting')) {
+      updates.status = 'returning';
+    }
+  }
 
   const updated = DataStore.drones.update(req.params.id, updates);
   if (!updated) {

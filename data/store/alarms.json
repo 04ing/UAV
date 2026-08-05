@@ -1,5 +1,311 @@
 [
   {
+    "id": "ALARM-049",
+    "type": "无人机失联",
+    "severity": "critical",
+    "droneId": "DRONE-003",
+    "lat": 30.60905,
+    "lng": 114.31405000000001,
+    "timestamp": "2026-08-04T05:33:13.751Z",
+    "status": "pending",
+    "description": "🚨 紧急！无人机 DRONE-003 电量耗尽坠毁，最后位置: 30.609050, 114.314050，请立即组织救援！",
+    "emergency": true,
+    "lastKnownPosition": {
+      "lat": 30.60905,
+      "lng": 114.31405000000001,
+      "altitude": 64
+    }
+  },
+  {
+    "id": "ALARM-048",
+    "type": "无人机失联",
+    "severity": "critical",
+    "droneId": "DRONE-005",
+    "lat": 30.597640000000002,
+    "lng": 114.305,
+    "timestamp": "2026-08-04T05:18:07.822Z",
+    "status": "pending",
+    "description": "🚨 紧急！无人机 DRONE-005 电量耗尽坠毁，最后位置: 30.597640, 114.305000，请立即组织救援！",
+    "emergency": true,
+    "lastKnownPosition": {
+      "lat": 30.597640000000002,
+      "lng": 114.305,
+      "altitude": 1
+    }
+  },
+  {
+    "id": "ALARM-047",
+    "type": "无人机失联",
+    "severity": "critical",
+    "droneId": "DRONE-TEST-MARK-1",
+    "lat": 30.1,
+    "lng": 114.2,
+    "timestamp": "2026-08-04T04:46:12.181Z",
+    "status": "pending",
+    "description": "🚨 紧急！无人机 DRONE-TEST-MARK-1 电量耗尽坠毁，最后位置: 30.100000, 114.200000，请立即组织救援！",
+    "emergency": true,
+    "lastKnownPosition": {
+      "lat": 30.1,
+      "lng": 114.2,
+      "altitude": 5
+    }
+  },
+  {
+    "id": "ALARM-046",
+    "type": "无人机失联",
+    "severity": "critical",
+    "droneId": "DRONE-TEST-CRASH-4",
+    "lat": 30.444,
+    "lng": 114.333,
+    "timestamp": "2026-08-04T04:46:11.836Z",
+    "status": "pending",
+    "description": "🚨 紧急！无人机 DRONE-TEST-CRASH-4 电量耗尽坠毁，最后位置: 30.444000, 114.333000，请立即组织救援！",
+    "emergency": true,
+    "lastKnownPosition": {
+      "lat": 30.444,
+      "lng": 114.333,
+      "altitude": 15
+    }
+  },
+  {
+    "id": "ALARM-045",
+    "type": "无人机失联",
+    "severity": "critical",
+    "droneId": "DRONE-TEST-CRASH-4",
+    "lat": 30.444,
+    "lng": 114.333,
+    "timestamp": "2026-08-04T04:46:11.740Z",
+    "status": "pending",
+    "description": "🚨 紧急！无人机 DRONE-TEST-CRASH-4 电量耗尽坠毁，最后位置: 30.444000, 114.333000，请立即组织救援！",
+    "emergency": true,
+    "lastKnownPosition": {
+      "lat": 30.444,
+      "lng": 114.333,
+      "altitude": 15
+    }
+  },
+  {
+    "id": "ALARM-044",
+    "type": "无人机失联",
+    "severity": "critical",
+    "droneId": "DRONE-TEST-CRASH-3",
+    "lat": 30.555,
+    "lng": 114.222,
+    "timestamp": "2026-08-04T04:46:11.342Z",
+    "status": "pending",
+    "description": "🚨 紧急！无人机 DRONE-TEST-CRASH-3 电量耗尽坠毁，最后位置: 30.555000, 114.222000，请立即组织救援！",
+    "emergency": true,
+    "lastKnownPosition": {
+      "lat": 30.555,
+      "lng": 114.222,
+      "altitude": 30
+    }
+  },
+  {
+    "id": "ALARM-043",
+    "type": "无人机失联",
+    "severity": "critical",
+    "droneId": "DRONE-TEST-CRASH-2",
+    "lat": 30.999,
+    "lng": 114.111,
+    "timestamp": "2026-08-04T04:46:11.092Z",
+    "status": "pending",
+    "description": "🚨 紧急！无人机 DRONE-TEST-CRASH-2 电量耗尽坠毁，最后位置: 30.999000, 114.111000，请立即组织救援！",
+    "emergency": true,
+    "lastKnownPosition": {
+      "lat": 30.999,
+      "lng": 114.111,
+      "altitude": 10
+    }
+  },
+  {
+    "id": "ALARM-042",
+    "type": "无人机失联",
+    "severity": "critical",
+    "droneId": "DRONE-TEST-CRASH-1",
+    "lat": 30.123,
+    "lng": 114.456,
+    "timestamp": "2026-08-04T04:46:10.809Z",
+    "status": "pending",
+    "description": "🚨 紧急！无人机 DRONE-TEST-CRASH-1 电量耗尽坠毁，最后位置: 30.123000, 114.456000，请立即组织救援！",
+    "emergency": true,
+    "lastKnownPosition": {
+      "lat": 30.123,
+      "lng": 114.456,
+      "altitude": 25
+    }
+  },
+  {
+    "id": "ALARM-041",
+    "type": "无人机失联",
+    "severity": "critical",
+    "droneId": "DRONE-005",
+    "lat": 30.598,
+    "lng": 114.305,
+    "timestamp": "2026-08-04T04:46:10.430Z",
+    "status": "pending",
+    "description": "🚨 紧急！无人机 DRONE-005 电量耗尽坠毁，最后位置: 30.598000, 114.305000，请立即组织救援！",
+    "emergency": true,
+    "lastKnownPosition": {
+      "lat": 30.598,
+      "lng": 114.305,
+      "altitude": 50
+    }
+  },
+  {
+    "id": "ALARM-040",
+    "type": "无人机失联",
+    "severity": "critical",
+    "droneId": "DRONE-005",
+    "lat": 30.598,
+    "lng": 114.305,
+    "timestamp": "2026-08-04T04:46:10.319Z",
+    "status": "pending",
+    "description": "🚨 紧急！无人机 DRONE-005 电量耗尽坠毁，最后位置: 30.598000, 114.305000，请立即组织救援！",
+    "emergency": true,
+    "lastKnownPosition": {
+      "lat": 30.598,
+      "lng": 114.305,
+      "altitude": 50
+    }
+  },
+  {
+    "id": "ALARM-039",
+    "type": "无人机失联",
+    "severity": "critical",
+    "droneId": "DRONE-TEST-MARK-1",
+    "lat": 30.1,
+    "lng": 114.2,
+    "timestamp": "2026-08-04T04:43:41.573Z",
+    "status": "pending",
+    "description": "🚨 紧急！无人机 DRONE-TEST-MARK-1 电量耗尽坠毁，最后位置: 30.100000, 114.200000，请立即组织救援！",
+    "emergency": true,
+    "lastKnownPosition": {
+      "lat": 30.1,
+      "lng": 114.2,
+      "altitude": 5
+    }
+  },
+  {
+    "id": "ALARM-038",
+    "type": "无人机失联",
+    "severity": "critical",
+    "droneId": "DRONE-TEST-CRASH-4",
+    "lat": 30.444,
+    "lng": 114.333,
+    "timestamp": "2026-08-04T04:43:41.241Z",
+    "status": "pending",
+    "description": "🚨 紧急！无人机 DRONE-TEST-CRASH-4 电量耗尽坠毁，最后位置: 30.444000, 114.333000，请立即组织救援！",
+    "emergency": true,
+    "lastKnownPosition": {
+      "lat": 30.444,
+      "lng": 114.333,
+      "altitude": 15
+    }
+  },
+  {
+    "id": "ALARM-037",
+    "type": "无人机失联",
+    "severity": "critical",
+    "droneId": "DRONE-TEST-CRASH-4",
+    "lat": 30.444,
+    "lng": 114.333,
+    "timestamp": "2026-08-04T04:43:41.030Z",
+    "status": "pending",
+    "description": "🚨 紧急！无人机 DRONE-TEST-CRASH-4 电量耗尽坠毁，最后位置: 30.444000, 114.333000，请立即组织救援！",
+    "emergency": true,
+    "lastKnownPosition": {
+      "lat": 30.444,
+      "lng": 114.333,
+      "altitude": 15
+    }
+  },
+  {
+    "id": "ALARM-036",
+    "type": "无人机失联",
+    "severity": "critical",
+    "droneId": "DRONE-TEST-CRASH-3",
+    "lat": 30.555,
+    "lng": 114.222,
+    "timestamp": "2026-08-04T04:43:40.628Z",
+    "status": "pending",
+    "description": "🚨 紧急！无人机 DRONE-TEST-CRASH-3 电量耗尽坠毁，最后位置: 30.555000, 114.222000，请立即组织救援！",
+    "emergency": true,
+    "lastKnownPosition": {
+      "lat": 30.555,
+      "lng": 114.222,
+      "altitude": 30
+    }
+  },
+  {
+    "id": "ALARM-035",
+    "type": "无人机失联",
+    "severity": "critical",
+    "droneId": "DRONE-TEST-CRASH-2",
+    "lat": 30.999,
+    "lng": 114.111,
+    "timestamp": "2026-08-04T04:43:40.237Z",
+    "status": "pending",
+    "description": "🚨 紧急！无人机 DRONE-TEST-CRASH-2 电量耗尽坠毁，最后位置: 30.999000, 114.111000，请立即组织救援！",
+    "emergency": true,
+    "lastKnownPosition": {
+      "lat": 30.999,
+      "lng": 114.111,
+      "altitude": 10
+    }
+  },
+  {
+    "id": "ALARM-034",
+    "type": "无人机失联",
+    "severity": "critical",
+    "droneId": "DRONE-TEST-CRASH-1",
+    "lat": 30.123,
+    "lng": 114.456,
+    "timestamp": "2026-08-04T04:43:39.844Z",
+    "status": "pending",
+    "description": "🚨 紧急！无人机 DRONE-TEST-CRASH-1 电量耗尽坠毁，最后位置: 30.123000, 114.456000，请立即组织救援！",
+    "emergency": true,
+    "lastKnownPosition": {
+      "lat": 30.123,
+      "lng": 114.456,
+      "altitude": 25
+    }
+  },
+  {
+    "id": "ALARM-033",
+    "type": "无人机失联",
+    "severity": "critical",
+    "droneId": "DRONE-005",
+    "lat": 30.598,
+    "lng": 114.305,
+    "timestamp": "2026-08-04T04:43:39.340Z",
+    "status": "pending",
+    "description": "🚨 紧急！无人机 DRONE-005 电量耗尽坠毁，最后位置: 30.598000, 114.305000，请立即组织救援！",
+    "emergency": true,
+    "lastKnownPosition": {
+      "lat": 30.598,
+      "lng": 114.305,
+      "altitude": 50
+    }
+  },
+  {
+    "id": "ALARM-032",
+    "type": "无人机失联",
+    "severity": "critical",
+    "droneId": "DRONE-005",
+    "lat": 30.598,
+    "lng": 114.305,
+    "timestamp": "2026-08-04T04:43:39.115Z",
+    "status": "pending",
+    "description": "🚨 紧急！无人机 DRONE-005 电量耗尽坠毁，最后位置: 30.598000, 114.305000，请立即组织救援！",
+    "emergency": true,
+    "lastKnownPosition": {
+      "lat": 30.598,
+      "lng": 114.305,
+      "altitude": 50
+    }
+  },
+  {
     "id": "ALARM-031",
     "type": "无人机失联",
     "severity": "critical",
