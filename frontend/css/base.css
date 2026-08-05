@@ -1129,6 +1129,96 @@ canvas {
   text-decoration: underline;
 }
 
+/* ---------- 用户中心 ---------- */
+.page--profile {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 0;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 24px;
+}
+
+.profile-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+  color: #fff;
+  font-size: 28px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.profile-header__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-name {
+  font-size: var(--fs-xl);
+  font-weight: 600;
+  color: var(--fg);
+  margin: 0 0 6px;
+}
+
+.profile-meta {
+  font-size: var(--fs-sm);
+  color: var(--fg-secondary);
+}
+
+.profile-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+
+.profile-tab {
+  background: none;
+  border: none;
+  color: var(--fg-secondary);
+  font-size: var(--fs-base);
+  padding: 12px 24px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.profile-tab:hover {
+  color: var(--fg);
+}
+
+.profile-tab.active {
+  color: var(--accent-cyan);
+  border-bottom-color: var(--accent-cyan);
+}
+
+.profile-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+}
+
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 440px;
+}
+
 /* 减弱动画偏好 */
 @media (prefers-reduced-motion: reduce) {
   *,

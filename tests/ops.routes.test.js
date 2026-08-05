@@ -275,20 +275,145 @@ describe('Ops 路由 - 认证模块', () => {
 
   // ---------- GET /me ----------
   describe('GET /api/auth/me - 当前用户信息', () => {
-    test('携带 Token 应返回用户信息', async () => {
+    test('携带 Token 应返回完整用户信息（含 createdAt）', async () => {
       const res = await request(app)
         .get('/api/auth/me')
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.status).toBe(200);
       expect(res.body.code).toBe(0);
-      expect(res.body.data.username).toBeDefined();
+      expect(res.body.data.username).toBe(TEST_USER.username);
       expect(res.body.data.id).toBeDefined();
       expect(res.body.data.role).toBeDefined();
+      expect(res.body.data.name).toBe(TEST_USER.name);
+      expect(res.body.data.createdAt).toBeDefined();
+      expect(res.body.data.password).toBeUndefined();
     });
 
     test('无 Token 应返回 401', async () => {
       const res = await request(app).get('/api/auth/me');
+
+      expect(res.status).toBe(401);
+    });
+
+    test('不存在的用户应返回 404', async () => {
+      // 使用不存在的 userId 签发 token
+      const fakeToken = signToken({ id: 'USER-NOT-EXIST', username: 'ghost', role: 'viewer', name: 'Ghost' });
+      const res = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', `Bearer ${fakeToken}`);
+
+      expect(res.status).toBe(404);
+    });
+  });
+
+  // ---------- PUT /me ----------
+  describe('PUT /api/auth/me - 更新个人信息', () => {
+    test('应成功更新姓名并返回新 Token', async () => {
+      const res = await request(app)
+        .put('/api/auth/me')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ name: '新测试名' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.code).toBe(0);
+      expect(res.body.data.name).toBe('新测试名');
+      expect(res.body.data.token).toBeDefined();
+    });
+
+    test('空姓名应返回 400', async () => {
+      const res = await request(app)
+        .put('/api/auth/me')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ name: '   ' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.msg).toContain('姓名不能为空');
+    });
+
+    test('无字段应返回 400', async () => {
+      const res = await request(app)
+        .put('/api/auth/me')
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
+
+      expect(res.status).toBe(400);
+      expect(res.body.msg).toContain('没有可更新');
+    });
+
+    test('无 Token 应返回 401', async () => {
+      const res = await request(app)
+        .put('/api/auth/me')
+        .send({ name: 'test' });
+
+      expect(res.status).toBe(401);
+    });
+  });
+
+  // ---------- PUT /me/password ----------
+  describe('PUT /api/auth/me/password - 修改密码', () => {
+    test('应成功修改密码', async () => {
+      const res = await request(app)
+        .put('/api/auth/me/password')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ oldPassword: TEST_USER.password, newPassword: 'NewPass@999' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.code).toBe(0);
+
+      // 用新密码登录验证
+      const loginRes = await request(app)
+        .post('/api/auth/login')
+        .send({ username: TEST_USER.username, password: 'NewPass@999' });
+
+      expect(loginRes.status).toBe(200);
+      // 恢复原密码
+      TEST_USER.password = 'NewPass@999';
+    });
+
+    test('旧密码错误应返回 401', async () => {
+      const res = await request(app)
+        .put('/api/auth/me/password')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ oldPassword: 'WrongPassword', newPassword: 'Another123' });
+
+      expect(res.status).toBe(401);
+      expect(res.body.msg).toContain('旧密码不正确');
+    });
+
+    test('新密码不足 6 位应返回 400', async () => {
+      const res = await request(app)
+        .put('/api/auth/me/password')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ oldPassword: TEST_USER.password, newPassword: '12345' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.msg).toContain('至少 6');
+    });
+
+    test('新旧密码相同应返回 400', async () => {
+      const res = await request(app)
+        .put('/api/auth/me/password')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ oldPassword: TEST_USER.password, newPassword: TEST_USER.password });
+
+      expect(res.status).toBe(400);
+      expect(res.body.msg).toContain('不能与旧密码相同');
+    });
+
+    test('缺少参数应返回 400', async () => {
+      const res = await request(app)
+        .put('/api/auth/me/password')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ oldPassword: TEST_USER.password });
+
+      expect(res.status).toBe(400);
+    });
+
+    test('无 Token 应返回 401', async () => {
+      const res = await request(app)
+        .put('/api/auth/me/password')
+        .send({ oldPassword: 'test', newPassword: 'test123456' });
 
       expect(res.status).toBe(401);
     });

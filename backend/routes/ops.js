@@ -122,7 +122,110 @@ authRouter.post('/login', async (req, res) => {
 });
 
 authRouter.get('/me', (req, res) => {
-  success(res, req.user, '获取当前用户信息成功');
+  const user = DataStore.users.getById(req.user.id);
+  if (!user) {
+    return error(res, '用户不存在', 404);
+  }
+  success(res, {
+    id: user.id,
+    username: user.username,
+    name: user.name,
+    role: user.role,
+    createdAt: user.createdAt || null
+  }, '获取当前用户信息成功');
+});
+
+authRouter.put('/me', (req, res) => {
+  const user = DataStore.users.getById(req.user.id);
+  if (!user) {
+    return error(res, '用户不存在', 404);
+  }
+
+  const { name } = req.body || {};
+  const updates = {};
+
+  if (name !== undefined) {
+    if (typeof name !== 'string' || name.trim().length === 0) {
+      return error(res, '姓名不能为空', 400);
+    }
+    updates.name = name.trim();
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return error(res, '没有可更新的字段', 400);
+  }
+
+  const updated = DataStore.users.update(user.id, updates);
+  DataStore.auditLogs.add({
+    id: `LOG-${String(Date.now()).slice(-6)}`,
+    user: req.user.username,
+    action: 'update_profile',
+    target: user.id,
+    ip: req.ip || '-',
+    timestamp: new Date().toISOString()
+  });
+
+  // 重新签发 token 以更新 name
+  const newToken = signToken({
+    id: updated.id,
+    username: updated.username,
+    role: updated.role,
+    name: updated.name
+  });
+
+  success(res, {
+    id: updated.id,
+    username: updated.username,
+    name: updated.name,
+    role: updated.role,
+    token: newToken
+  }, '个人信息更新成功');
+});
+
+authRouter.put('/me/password', async (req, res) => {
+  const user = DataStore.users.getById(req.user.id);
+  if (!user) {
+    return error(res, '用户不存在', 404);
+  }
+
+  const { oldPassword, newPassword } = req.body || {};
+
+  if (!oldPassword || !newPassword) {
+    return error(res, '旧密码和新密码必填', 400);
+  }
+  if (newPassword.length < 6) {
+    return error(res, '新密码至少 6 个字符', 400);
+  }
+  if (oldPassword === newPassword) {
+    return error(res, '新密码不能与旧密码相同', 400);
+  }
+
+  // 验证旧密码
+  const isBcryptHash = user.password.length >= 60 && user.password.startsWith('$2b$');
+  let valid = false;
+  if (isBcryptHash) {
+    valid = await bcrypt.compare(oldPassword, user.password);
+  } else {
+    valid = user.password === oldPassword;
+  }
+
+  if (!valid) {
+    return error(res, '旧密码不正确', 401);
+  }
+
+  const hash = await bcrypt.hash(newPassword, 10);
+  DataStore.users.update(user.id, { password: hash });
+
+  DataStore.auditLogs.add({
+    id: `LOG-${String(Date.now()).slice(-6)}`,
+    user: req.user.username,
+    action: 'change_password',
+    target: user.id,
+    ip: req.ip || '-',
+    timestamp: new Date().toISOString()
+  });
+
+  success(res, {}, '密码修改成功');
 });
 
 authRouter.post('/logout', (req, res) => {

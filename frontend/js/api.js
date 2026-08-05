@@ -232,7 +232,31 @@ const auth = {
     localStorage.removeItem('drone_user_name');
   },
   /** 当前用户信息 */
-  me: () => request('/auth/me', { method: 'GET' })
+  me: () => request('/auth/me', { method: 'GET' }),
+  /** 更新个人信息（目前仅支持修改姓名） */
+  updateMe: async (data) => {
+    const result = await request('/auth/me', {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+    const respData = result && result.data ? result.data : result;
+    if (respData && respData.token) {
+      setToken(respData.token);
+      if (respData.user && respData.user.name) {
+        localStorage.setItem('drone_user_name', respData.user.name);
+      }
+      if (respData.name) {
+        localStorage.setItem('drone_user_name', respData.name);
+      }
+    }
+    return result;
+  },
+  /** 修改密码 */
+  changePassword: (oldPassword, newPassword) =>
+    request('/auth/me/password', {
+      method: 'PUT',
+      body: JSON.stringify({ oldPassword, newPassword })
+    })
 };
 
 /* ---------- 审计日志 ---------- */

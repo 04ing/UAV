@@ -18,7 +18,8 @@ const ROUTES = {
   'report':      { title: '巡检报表',    module: () => import('/pages/report.js') },
   'ops':         { title: '运维安全',    module: () => import('/pages/ops.js') },
   'api':         { title: '接口管理',    module: () => import('/pages/api.js') },
-  'ai-algorithm':{ title: 'AI算法',      module: () => import('/pages/ai-algorithm.js') }
+  'ai-algorithm':{ title: 'AI算法',      module: () => import('/pages/ai-algorithm.js') },
+  'profile':     { title: '用户中心',    module: () => import('/pages/profile.js') }
 };
 
 const DEFAULT_ROUTE = 'dashboard';
@@ -173,14 +174,23 @@ function initUserArea() {
   if (nameEl) nameEl.textContent = userName;
   if (avatarEl) avatarEl.textContent = (userName[0] || 'U').toUpperCase();
 
+  // 点击用户区跳转用户中心
+  const userInfo = document.getElementById('user-info');
+  if (userInfo) {
+    userInfo.style.cursor = 'pointer';
+    userInfo.title = '进入用户中心';
+    userInfo.addEventListener('click', () => {
+      window.location.hash = '#/profile';
+    });
+  }
+
   const logoutBtn = document.getElementById('btn-logout');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
       if (!confirm('确定要退出登录吗？')) return;
       localStorage.removeItem('drone_token');
       localStorage.removeItem('drone_user_name');
-      // 简化：直接刷新，后续接入登录页时跳登录页
-      window.location.reload();
+      window.location.hash = '#/login';
     });
   }
 }
