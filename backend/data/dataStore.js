@@ -220,6 +220,15 @@ const DataStore = {
       }
       return null;
     },
+    delete: (id) => {
+      const users = DataStore.users.getAll();
+      const filtered = users.filter(u => u.id !== id);
+      if (filtered.length !== users.length) {
+        saveFile(STORE_FILES.users, filtered);
+        return true;
+      }
+      return false;
+    },
     clear: () => saveFile(STORE_FILES.users, [])
   },
 

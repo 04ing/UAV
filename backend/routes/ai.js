@@ -18,7 +18,15 @@ router.get('/models', (req, res) => {
   success(res, modelsCache, '获取 AI 模型列表成功');
 });
 
-router.post('/recognize', upload.single('file'), async (req, res) => {
+router.post('/recognize', (req, res, next) => {
+  upload.single('file')(req, res, (err) => {
+    if (err) {
+      // multer 错误（如字段名错误 LIMIT_UNEXPECTED_FILE）统一返回 400
+      return error(res, '未接收到图片文件（字段名应为 file）', 400);
+    }
+    next();
+  });
+}, async (req, res) => {
   if (!req.file) {
     return error(res, '未接收到图片文件（字段名应为 file）', 400);
   }
