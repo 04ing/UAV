@@ -825,13 +825,14 @@ function initMap(droneList, alarmList, geoFenceList, routes) {
       iconSize: [28, 28],
       iconAnchor: [14, 14]
     });
+    const batteryDisplay = drone.battery != null ? Number(drone.battery).toFixed(2) : '--';
     window.L.marker([drone.lat, drone.lng], { icon, zIndexOffset: 1000 })
       .addTo(mapInstance)
       .bindPopup(
         `<b>${drone.id}</b>` +
         `<br>型号: ${drone.model || '--'}` +
         `<br>状态: ${info.label}` +
-        `<br>电量: ${drone.battery ?? '--'}%` +
+        `<br>电量: ${batteryDisplay}%` +
         `<br>信号: ${drone.signal || '--'}`
       );
   });

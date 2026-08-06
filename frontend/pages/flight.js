@@ -705,7 +705,7 @@ async function showDrawer(drone) {
           <div class="drawer-kv">
             <div class="drawer-kv__item"><span class="drawer-kv__label">型号</span><span class="drawer-kv__value">${drone.model || '--'}</span></div>
             <div class="drawer-kv__item"><span class="drawer-kv__label">状态</span><span class="drawer-kv__value">${info.label}</span></div>
-            <div class="drawer-kv__item"><span class="drawer-kv__label">电量</span><span class="drawer-kv__value">${drone.battery ?? '--'}%</span></div>
+            <div class="drawer-kv__item"><span class="drawer-kv__label">电量</span><span class="drawer-kv__value">${drone.battery != null ? Number(drone.battery).toFixed(2) : '--'}%</span></div>
             <div class="drawer-kv__item"><span class="drawer-kv__label">信号</span><span class="drawer-kv__value">${drone.signal || '--'}</span></div>
             <div class="drawer-kv__item"><span class="drawer-kv__label">经度</span><span class="drawer-kv__value">${drone.lng != null ? drone.lng.toFixed(5) : '--'}</span></div>
             <div class="drawer-kv__item"><span class="drawer-kv__label">纬度</span><span class="drawer-kv__value">${drone.lat != null ? drone.lat.toFixed(5) : '--'}</span></div>
@@ -1078,7 +1078,7 @@ function renderDronesOnMap() {
     const marker = window.L.marker([drone.lat, drone.lng], { icon, zIndexOffset: 1000 }).addTo(mapInstance);
     marker._isDrone = true;
     const info = droneStatusInfo(drone.status);
-    marker.bindPopup(`<b>${drone.id}</b><br>型号: ${drone.model || '--'}<br>状态: ${info.label}<br>电量: ${drone.battery ?? '--'}%<br>信号: ${drone.signal || '--'}`);
+    marker.bindPopup(`<b>${drone.id}</b><br>型号: ${drone.model || '--'}<br>状态: ${info.label}<br>电量: ${drone.battery != null ? Number(drone.battery).toFixed(2) : '--'}%<br>信号: ${drone.signal || '--'}`);
   });
 }
 

@@ -601,10 +601,11 @@ function renderDrones(list) {
       iconSize: [28, 28],
       iconAnchor: [14, 14]
     });
+    const batteryDisplay = drone.battery != null ? Number(drone.battery).toFixed(2) : '--';
     const popup = `<b>${drone.id}</b><br>
       机型: ${drone.model || '--'}<br>
       状态: ${info.label}<br>
-      电量: ${drone.battery ?? '--'}%<br>
+      电量: ${batteryDisplay}%<br>
       信号: ${drone.signal || '--'}`;
     window.L.marker([drone.lat, drone.lng], { icon, zIndexOffset: 1000 })
       .bindPopup(popup)
