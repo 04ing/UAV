@@ -10,7 +10,7 @@ const modelsCache = [
 ];
 const deployTasks = {};
 
-const YOLO_SERVER_URL = 'http://localhost:8080';
+const YOLO_SERVER_URL = process.env.YOLO_SERVER_URL || 'http://localhost:8080';
 
 const upload = multer({ storage: multer.memoryStorage() });
 

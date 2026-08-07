@@ -2,9 +2,8 @@
 const jwt = require('jsonwebtoken');
 const { error } = require('../utils/response');
 
-// 演示用密钥，生产环境应从环境变量读取
-const JWT_SECRET = 'drone-inspection-demo-secret-2026';
-const JWT_EXPIRES_IN = '8h';
+const JWT_SECRET = process.env.JWT_SECRET || 'drone-inspection-demo-secret-2026';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '8h';
 
 // 鉴权白名单（不需要 token 即可访问）
 const WHITELIST = ['/api/auth/login', '/api/auth/register', '/api/meta/endpoints', '/api/meta/health'];

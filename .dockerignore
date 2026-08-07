@@ -1,0 +1,56 @@
+# 依赖和构建产物
+node_modules/
+coverage/
+
+# 运行时数据（容器内自动生成）
+data/store/
+logs/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# 文档
+docs/
+*.md
+*.docx
+*.txt
+
+# 测试（生产镜像不需要）
+tests/
+
+# 部署脚本和临时文件
+deploy*.js
+deploy*.ps1
+deploy*.py
+deploy*.sh
+check-*.js
+restart.js
+setup_*.py
+test_*.py
+fix_*.py
+
+# 模型权重（体积大，按需挂载）
+*.pt
+*.pth
+*.onnx
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 环境变量（通过 docker-compose env 注入）
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker 自身（避免循环引用）
+Dockerfile*
+docker-compose*.yml
+.dockerignore
