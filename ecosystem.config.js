@@ -13,8 +13,8 @@ module.exports = {
       name: 'uav-backend',
       script: './backend/server.js',
       cwd: __dirname,
-      instances: 1,
-      exec_mode: 'fork',
+      instances: 2,
+      exec_mode: 'cluster',
       watch: false,
       autorestart: true,
       max_memory_restart: '500M',
@@ -32,6 +32,7 @@ module.exports = {
       out_file: './logs/backend-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss',
       time: true,
+      merge_logs: true,
     },
   ],
 };

@@ -68,6 +68,16 @@ const authLimiter = rateLimit({
   message: { code: -1, msg: '登录尝试次数过多，请 15 分钟后重试', data: null },
 });
 
+app.get('/healthz', (req, res) => {
+  res.setHeader('Content-Type', 'text/plain');
+  res.status(200).send('OK');
+});
+
+app.get('/readyz', (req, res) => {
+  res.setHeader('Content-Type', 'text/plain');
+  res.status(200).send('READY');
+});
+
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
