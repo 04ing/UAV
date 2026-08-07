@@ -351,6 +351,273 @@ dronesRouter.get('/fault-types/list', (req, res) => {
   success(res, types, '获取故障类型列表成功');
 });
 
+/* ========== 飞控高级功能 API ========== */
+
+// 飞行参数存储（内存缓存，可扩展为持久化）
+const flightParamsCache = {};
+
+/* 保存飞行参数配置 */
+dronesRouter.post('/:id/flight-params', (req, res) => {
+  const device = DataStore.drones.getById(req.params.id);
+  if (!device) {
+    return error(res, `未找到无人机: ${req.params.id}`, 404);
+  }
+
+  const { obstacleAvoidance, terrainFollow, resumeFlight, obstacleDistance, maxAltitude, maxSpeed } = req.body || {};
+
+  const params = {
+    droneId: req.params.id,
+    obstacleAvoidance: obstacleAvoidance !== undefined ? !!obstacleAvoidance : (flightParamsCache[req.params.id]?.obstacleAvoidance || false),
+    terrainFollow: terrainFollow !== undefined ? !!terrainFollow : (flightParamsCache[req.params.id]?.terrainFollow || false),
+    resumeFlight: resumeFlight !== undefined ? !!resumeFlight : (flightParamsCache[req.params.id]?.resumeFlight || true),
+    obstacleDistance: obstacleDistance !== undefined ? Number(obstacleDistance) : (flightParamsCache[req.params.id]?.obstacleDistance || 20),
+    maxAltitude: maxAltitude !== undefined ? Number(maxAltitude) : (flightParamsCache[req.params.id]?.maxAltitude || 120),
+    maxSpeed: maxSpeed !== undefined ? Number(maxSpeed) : (flightParamsCache[req.params.id]?.maxSpeed || 15),
+    updatedAt: new Date().toISOString()
+  };
+
+  flightParamsCache[req.params.id] = params;
+
+  // 同步更新无人机状态
+  DataStore.drones.update(req.params.id, {
+    flightParams: params,
+    lastUpdate: new Date().toISOString()
+  });
+
+  // 记录审计日志
+  DataStore.auditLogs.add({
+    id: `LOG-${String(Date.now()).slice(-6)}`,
+    user: (req.user && req.user.username) || 'system',
+    action: 'update_flight_params',
+    target: req.params.id,
+    ip: req.ip || '-',
+    timestamp: new Date().toISOString()
+  });
+
+  success(res, params, '飞行参数保存成功');
+});
+
+/* 获取飞行参数配置 */
+dronesRouter.get('/:id/flight-params', (req, res) => {
+  const device = DataStore.drones.getById(req.params.id);
+  if (!device) {
+    return error(res, `未找到无人机: ${req.params.id}`, 404);
+  }
+
+  const params = flightParamsCache[req.params.id] || device.flightParams || {
+    droneId: req.params.id,
+    obstacleAvoidance: false,
+    terrainFollow: false,
+    resumeFlight: true,
+    obstacleDistance: 20,
+    maxAltitude: 120,
+    maxSpeed: 15
+  };
+
+  success(res, params, '获取飞行参数成功');
+});
+
+/* 断点续飞 - 保存当前飞行进度 */
+dronesRouter.post('/:id/resume-flight/save', (req, res) => {
+  const device = DataStore.drones.getById(req.params.id);
+  if (!device) {
+    return error(res, `未找到无人机: ${req.params.id}`, 404);
+  }
+
+  const { waypointIndex, flightProgress, routeId, lat, lng, altitude } = req.body || {};
+
+  const breakpoint = {
+    droneId: req.params.id,
+    waypointIndex: waypointIndex || 0,
+    flightProgress: flightProgress || 0,
+    routeId: routeId || null,
+    lat: lat || device.lat,
+    lng: lng || device.lng,
+    altitude: altitude || device.altitude,
+    savedAt: new Date().toISOString()
+  };
+
+  DataStore.drones.update(req.params.id, {
+    breakpoint,
+    lastUpdate: new Date().toISOString()
+  });
+
+  EventEmitter.emit('telemetry-update', {
+    droneId: req.params.id,
+    breakpointSaved: true
+  });
+
+  success(res, breakpoint, '断点已保存，可从中断点继续飞行');
+});
+
+/* 断点续飞 - 恢复飞行 */
+dronesRouter.post('/:id/resume-flight/start', (req, res) => {
+  const device = DataStore.drones.getById(req.params.id);
+  if (!device) {
+    return error(res, `未找到无人机: ${req.params.id}`, 404);
+  }
+
+  if (!device.breakpoint) {
+    return error(res, '该无人机没有保存的断点信息，无法续飞', 400);
+  }
+
+  const breakpoint = device.breakpoint;
+
+  // 更新无人机状态为巡检中
+  DataStore.drones.update(req.params.id, {
+    status: 'inspecting',
+    lat: breakpoint.lat,
+    lng: breakpoint.lng,
+    altitude: breakpoint.altitude,
+    lastUpdate: new Date().toISOString()
+  });
+
+  EventEmitter.emit('telemetry-update', {
+    droneId: req.params.id,
+    status: 'inspecting',
+    resumedFrom: breakpoint
+  });
+
+  success(res, {
+    droneId: req.params.id,
+    resumed: true,
+    breakpoint,
+    message: `无人机已从断点（航点 ${breakpoint.waypointIndex}）恢复飞行`
+  }, '断点续飞成功');
+});
+
+/* 仿地飞行 - 开启/关闭 */
+dronesRouter.post('/:id/terrain-follow', (req, res) => {
+  const device = DataStore.drones.getById(req.params.id);
+  if (!device) {
+    return error(res, `未找到无人机: ${req.params.id}`, 404);
+  }
+
+  const { enabled, followHeight } = req.body || {};
+
+  const terrainConfig = {
+    enabled: enabled !== undefined ? !!enabled : true,
+    followHeight: followHeight !== undefined ? Number(followHeight) : 50,
+    updatedAt: new Date().toISOString()
+  };
+
+  DataStore.drones.update(req.params.id, {
+    terrainFollow: terrainConfig,
+    lastUpdate: new Date().toISOString()
+  });
+
+  EventEmitter.emit('telemetry-update', {
+    droneId: req.params.id,
+    terrainFollow: terrainConfig
+  });
+
+  success(res, {
+    droneId: req.params.id,
+    ...terrainConfig,
+    message: terrainConfig.enabled ? `仿地飞行已开启，保持离地高度 ${terrainConfig.followHeight}m` : '仿地飞行已关闭'
+  }, '仿地飞行配置成功');
+});
+
+/* 历史遥测记录查询 */
+dronesRouter.get('/:id/history', (req, res) => {
+  const device = DataStore.drones.getById(req.params.id);
+  if (!device) {
+    return error(res, `未找到无人机: ${req.params.id}`, 404);
+  }
+
+  const { startDate, endDate, page, pageSize } = req.query;
+
+  // 从审计日志和告警记录中提取历史数据
+  let history = [];
+
+  // 获取该无人机的告警历史
+  const alarms = DataStore.alarms.getAll().filter(a => a.droneId === req.params.id);
+  alarms.forEach(a => {
+    history.push({
+      timestamp: a.timestamp,
+      type: 'alarm',
+      data: {
+        alarmId: a.id,
+        alarmType: a.type,
+        severity: a.severity,
+        status: a.status,
+        description: a.description,
+        lat: a.lat,
+        lng: a.lng
+      }
+    });
+  });
+
+  // 获取该无人机关联的工单历史
+  const workOrders = DataStore.workOrders.getAll().filter(w => {
+    // 检查工单是否与该无人机关联（通过告警ID）
+    if (w.alarmId && w.alarmId !== '-') {
+      const alarm = alarms.find(a => a.id === w.alarmId);
+      return alarm && alarm.droneId === req.params.id;
+    }
+    return false;
+  });
+  workOrders.forEach(w => {
+    history.push({
+      timestamp: w.createdAt,
+      type: 'work_order',
+      data: {
+        orderId: w.id,
+        title: w.title,
+        status: w.status,
+        assignee: w.assignee
+      }
+    });
+  });
+
+  // 添加当前状态快照
+  history.push({
+    timestamp: device.lastUpdate || new Date().toISOString(),
+    type: 'telemetry',
+    data: {
+      lat: device.lat,
+      lng: device.lng,
+      battery: device.battery,
+      signal: device.signal,
+      altitude: device.altitude,
+      speed: device.speed,
+      heading: device.heading,
+      status: device.status
+    }
+  });
+
+  // 日期过滤
+  if (startDate) {
+    const start = new Date(startDate).getTime();
+    if (!Number.isNaN(start)) {
+      history = history.filter(h => new Date(h.timestamp).getTime() >= start);
+    }
+  }
+  if (endDate) {
+    const end = new Date(endDate).getTime();
+    if (!Number.isNaN(end)) {
+      history = history.filter(h => new Date(h.timestamp).getTime() <= end);
+    }
+  }
+
+  // 按时间倒序排列
+  history.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+  // 分页
+  const total = history.length;
+  const currentPage = parseInt(page) || 1;
+  const size = parseInt(pageSize) || 50;
+  const startIdx = (currentPage - 1) * size;
+  const paginated = history.slice(startIdx, startIdx + size);
+
+  success(res, {
+    total,
+    page: currentPage,
+    pageSize: size,
+    items: paginated
+  }, '获取历史记录成功');
+});
+
 const geoFencesRouter = express.Router();
 
 geoFencesRouter.get('/', (req, res) => {

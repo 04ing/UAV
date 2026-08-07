@@ -189,6 +189,14 @@ const DataStore = {
       saveFile(STORE_FILES.geoFences, fences);
       return fence;
     },
+    update: (id, updates) => {
+      const fences = DataStore.geoFences.getAll();
+      const idx = fences.findIndex(f => f.id === id);
+      if (idx < 0) return null;
+      fences[idx] = { ...fences[idx], ...updates };
+      saveFile(STORE_FILES.geoFences, fences);
+      return fences[idx];
+    },
     delete: (id) => {
       const fences = DataStore.geoFences.getAll();
       const idx = fences.findIndex(f => f.id === id);

@@ -31,21 +31,34 @@ plansRouter.post('/', (req, res) => {
   success(res, newPlan, '巡检计划创建成功');
 });
 
+plansRouter.get('/:id', (req, res) => {
+  const plan = DataStore.inspectionPlans.getById(req.params.id);
+  if (!plan) {
+    return error(res, `未找到巡检计划: ${req.params.id}`, 404);
+  }
+  success(res, plan, '获取巡检计划详情成功');
+});
+
 plansRouter.put('/:id', (req, res) => {
-  const { status } = req.body || {};
   const plan = DataStore.inspectionPlans.getById(req.params.id);
   
   if (!plan) {
     return error(res, `未找到巡检计划: ${req.params.id}`, 404);
   }
 
-  if (status) {
-    plan.status = status;
-    plan.updatedAt = new Date().toISOString();
-    DataStore.inspectionPlans.update(req.params.id, plan);
-  }
+  const { name, droneId, route, frequency, startTime, status } = req.body || {};
 
-  success(res, plan, '巡检计划更新成功');
+  const updates = {};
+  if (name !== undefined) updates.name = name;
+  if (droneId !== undefined) updates.droneId = droneId;
+  if (Array.isArray(route)) updates.route = route;
+  if (frequency !== undefined) updates.frequency = frequency;
+  if (startTime !== undefined) updates.startTime = startTime;
+  if (status !== undefined) updates.status = status;
+  updates.updatedAt = new Date().toISOString();
+
+  const updated = DataStore.inspectionPlans.update(req.params.id, updates);
+  success(res, updated, '巡检计划更新成功');
 });
 
 plansRouter.delete('/:id', (req, res) => {
@@ -69,6 +82,14 @@ workOrdersRouter.get('/', (req, res) => {
   }
   
   success(res, list, '获取工单列表成功');
+});
+
+workOrdersRouter.get('/:id', (req, res) => {
+  const wo = DataStore.workOrders.getById(req.params.id);
+  if (!wo) {
+    return error(res, `未找到工单: ${req.params.id}`, 404);
+  }
+  success(res, wo, '获取工单详情成功');
 });
 
 workOrdersRouter.post('/', (req, res) => {

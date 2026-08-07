@@ -1302,8 +1302,22 @@ function renderParamsTab(container) {
   });
 
   // Save button
-  container.querySelector('#btn-save-params').addEventListener('click', () => {
-    showToast('参数已保存（演示模式：仅前端生效）', 'success');
+  container.querySelector('#btn-save-params').addEventListener('click', async () => {
+    const droneId = (droneData[0] || {}).id || 'DRONE-001';
+    const params = {
+      obstacleAvoidance: container.querySelector('#sw-obstacle').dataset.on === 'true',
+      terrainFollow: container.querySelector('#sw-terrain').dataset.on === 'true',
+      resumeFlight: container.querySelector('#sw-resume').dataset.on === 'true',
+      obstacleDistance: parseInt(container.querySelector('#rng-distance').value),
+      maxAltitude: parseInt(container.querySelector('#rng-altitude').value),
+      maxSpeed: parseFloat(container.querySelector('#rng-speed').value)
+    };
+    try {
+      await drones.saveFlightParams(droneId, params);
+      showToast('飞行参数已保存并生效', 'success');
+    } catch (err) {
+      showToast(err.message || '参数保存失败', 'error');
+    }
   });
 }
 

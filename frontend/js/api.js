@@ -162,6 +162,21 @@ const drones = {
   getFault: (id) => request(`/drones/${id}/fault`, { method: 'GET' }),
   /** 获取故障类型列表 */
   faultTypes: () => request('/drones/fault-types/list', { method: 'GET' }),
+  /** 获取飞行参数配置 */
+  getFlightParams: (id) => request(`/drones/${id}/flight-params`, { method: 'GET' }),
+  /** 保存飞行参数配置 */
+  saveFlightParams: (id, data) => request(`/drones/${id}/flight-params`, { method: 'POST', body: JSON.stringify(data) }),
+  /** 保存断点（断点续飞） */
+  saveBreakpoint: (id, data) => request(`/drones/${id}/resume-flight/save`, { method: 'POST', body: JSON.stringify(data) }),
+  /** 恢复飞行（断点续飞） */
+  resumeFlight: (id) => request(`/drones/${id}/resume-flight/start`, { method: 'POST' }),
+  /** 仿地飞行开关 */
+  terrainFollow: (id, data) => request(`/drones/${id}/terrain-follow`, { method: 'POST', body: JSON.stringify(data) }),
+  /** 历史记录查询 */
+  history: (id, params) => {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    return request(`/drones/${id}/history${qs}`, { method: 'GET' });
+  },
 };
 
 /* ---------- AI 智能识别 ---------- */
@@ -192,7 +207,9 @@ const plans = {
 const orders = {
   list: (params) => request('/work-orders', { method: 'GET' }),
   detail: (id) => request(`/work-orders/${id}`, { method: 'GET' }),
-  update: (id, data) => request(`/work-orders/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+  create: (data) => request('/work-orders', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id, data) => request(`/work-orders/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  remove: (id) => request(`/work-orders/${id}`, { method: 'DELETE' })
 };
 
 /* ---------- 鉴权 ---------- */
@@ -281,6 +298,16 @@ const meta = {
   endpoints: () => request('/meta/endpoints', { method: 'GET' })
 };
 
+/* ---------- 数据备份 ---------- */
+const backup = {
+  /** 创建数据备份 */
+  create: () => request('/ops/backup', { method: 'POST' }),
+  /** 获取备份列表 */
+  list: () => request('/ops/backup', { method: 'GET' }),
+  /** 删除备份 */
+  remove: (fileName) => request(`/ops/backup/${encodeURIComponent(fileName)}`, { method: 'DELETE' })
+};
+
 /* =====================================================================
  * 导出
  * ===================================================================== */
@@ -297,7 +324,8 @@ export {
   auth,
   audit,
   geoFences,
-  meta
+  meta,
+  backup
 };
 
 export default {
@@ -311,5 +339,6 @@ export default {
   auth,
   audit,
   geoFences,
-  meta
+  meta,
+  backup
 };

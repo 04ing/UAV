@@ -24,8 +24,9 @@ const EventEmitter = require('./utils/eventEmitter');
 const { dronesRouter, geoFencesRouter } = require('./routes/drones');
 const aiRouter = require('./routes/ai');
 const { plansRouter, workOrdersRouter, alarmsRouter } = require('./routes/business');
-const { authRouter, auditLogsRouter } = require('./routes/ops');
+const { authRouter, auditLogsRouter, backupRouter } = require('./routes/ops');
 const metaRouter = require('./routes/meta');
+const DJIAPI = require('./utils/djiApiAdapter');
 
 const app = express();
 const PORT = parseInt(process.env.PORT, 10) || 3000;
@@ -89,6 +90,7 @@ app.use('/api/inspection-plans', plansRouter);
 app.use('/api/work-orders', workOrdersRouter);
 app.use('/api/alarms', alarmsRouter);
 app.use('/api/audit-logs', auditLogsRouter);
+app.use('/api/ops/backup', backupRouter);
 
 const frontendIndex = path.join(__dirname, '../frontend/index.html');
 app.get('*', (req, res, next) => {
@@ -207,6 +209,10 @@ server.listen(PORT, () => {
 
 function shutdown(signal) {
   console.log(`\n[${signal}] shutting down...`);
+  // 清理 DJI Adapter 定时器，避免 PM2 reload 时泄漏
+  if (DJIAPI && typeof DJIAPI.cleanupTimers === 'function') {
+    DJIAPI.cleanupTimers();
+  }
   wssVideo.clients.forEach((c) => c.close());
   wssAlarm.clients.forEach((c) => c.close());
   wssTelemetry.clients.forEach((c) => c.close());

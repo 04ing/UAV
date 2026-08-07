@@ -8,7 +8,7 @@ const request = require('supertest');
 const bcrypt = require('bcrypt');
 const DataStore = require('../backend/data/dataStore');
 const { signToken } = require('../backend/middleware/auth');
-const { authRouter, auditLogsRouter } = require('../backend/routes/ops');
+const { authRouter, auditLogsRouter, backupRouter } = require('../backend/routes/ops');
 
 // 构建测试 App：requireAuth 在 authRouter 之前，使 /me、/users 等受保护
 // /api/auth/login 在 WHITELIST 中，仍可无 Token 访问
@@ -21,6 +21,7 @@ const { requireAuth } = require('../backend/middleware/auth');
 app.use(requireAuth);
 app.use('/api/auth', authRouter);
 app.use('/api/audit-logs', auditLogsRouter);
+app.use('/api/ops/backup', backupRouter);
 
 // ============ 常量 ============
 const TEST_USER = {
@@ -698,5 +699,78 @@ describe('Ops 路由 - 审计日志模块', () => {
       // 无效日期应被忽略，返回所有日志
       expect(res.body.data.total).toBeGreaterThanOrEqual(1);
     });
+  });
+});
+
+// ---------- 角色权限控制测试 ----------
+describe('Ops 路由 - 角色权限控制 (requireRole)', () => {
+  let viewerToken;
+
+  beforeAll(() => {
+    viewerToken = signToken({ id: 'USER-VIEWER', username: 'viewer_user', role: 'viewer', name: 'Viewer' });
+  });
+
+  test('viewer 角色不能创建用户 → 403', async () => {
+    const res = await request(app)
+      .post('/api/auth/users')
+      .set('Authorization', `Bearer ${viewerToken}`)
+      .send({ username: 'should_fail', password: 'Test@123', role: 'viewer' });
+
+    expect(res.status).toBe(403);
+    expect(res.body.msg).toContain('权限不足');
+  });
+
+  test('viewer 角色不能更新用户 → 403', async () => {
+    const res = await request(app)
+      .put('/api/auth/users/USER-TEST')
+      .set('Authorization', `Bearer ${viewerToken}`)
+      .send({ role: 'admin' });
+
+    expect(res.status).toBe(403);
+    expect(res.body.msg).toContain('权限不足');
+  });
+
+  test('viewer 角色不能删除用户 → 403', async () => {
+    const res = await request(app)
+      .delete('/api/auth/users/USER-TEST')
+      .set('Authorization', `Bearer ${viewerToken}`);
+
+    expect(res.status).toBe(403);
+    expect(res.body.msg).toContain('权限不足');
+  });
+
+  test('viewer 角色不能创建备份 → 403', async () => {
+    const res = await request(app)
+      .post('/api/ops/backup')
+      .set('Authorization', `Bearer ${viewerToken}`);
+
+    expect(res.status).toBe(403);
+    expect(res.body.msg).toContain('权限不足');
+  });
+
+  test('viewer 角色不能删除备份 → 403', async () => {
+    const res = await request(app)
+      .delete('/api/ops/backup/fake_backup.json')
+      .set('Authorization', `Bearer ${viewerToken}`);
+
+    expect(res.status).toBe(403);
+    expect(res.body.msg).toContain('权限不足');
+  });
+
+  test('admin 角色可以创建备份 → 200', async () => {
+    const res = await request(app)
+      .post('/api/ops/backup')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.code).toBe(0);
+    expect(res.body.data.fileName).toMatch(/^backup_/);
+
+    // 清理：删除测试备份
+    if (res.body.data && res.body.data.fileName) {
+      await request(app)
+        .delete(`/api/ops/backup/${res.body.data.fileName}`)
+        .set('Authorization', `Bearer ${token}`);
+    }
   });
 });

@@ -3,20 +3,25 @@ import json
 import os
 import base64
 
-os.environ['ULTRALYTICS_SETTINGS'] = r'e:\无人机智能巡检系统\ultralytics_settings.yaml'
-os.environ['HOME'] = r'e:\无人机智能巡检系统'
-os.environ['USERPROFILE'] = r'e:\无人机智能巡检系统'
-os.environ['TMP'] = r'e:\无人机智能巡检系统\temp'
-os.environ['TEMP'] = r'e:\无人机智能巡检系统\temp'
+# 支持通过环境变量配置路径，默认使用脚本所在目录
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-os.makedirs(r'e:\无人机智能巡检系统\temp', exist_ok=True)
+os.environ.setdefault('ULTRALYTICS_SETTINGS', os.path.join(_SCRIPT_DIR, 'ultralytics_settings.yaml'))
+os.environ.setdefault('HOME', _SCRIPT_DIR)
+os.environ.setdefault('USERPROFILE', _SCRIPT_DIR)
+
+_temp_dir = os.path.join(_SCRIPT_DIR, 'temp')
+os.makedirs(_temp_dir, exist_ok=True)
+os.environ.setdefault('TMP', _temp_dir)
+os.environ.setdefault('TEMP', _temp_dir)
 
 import torch
 import numpy as np
 import cv2
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
-MODEL_PATH = r"e:\无人机智能巡检系统\best.pt"
+# 模型路径：优先环境变量，其次脚本同目录
+MODEL_PATH = os.environ.get('YOLO_MODEL_PATH', os.path.join(_SCRIPT_DIR, 'best.pt'))
 LABELS = {0: '裂缝', 1: '剥落'}
 
 model = None

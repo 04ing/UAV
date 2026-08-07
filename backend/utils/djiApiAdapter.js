@@ -419,8 +419,9 @@ function updateMockTelemetry() {
   });
 }
 
-// 每3秒更新一次遥测数据
-setInterval(updateMockTelemetry, 3000);
+// 每3秒更新一次遥测数据（测试环境下不启动，避免并行测试间文件竞争）
+const telemetryTimer = process.env.NODE_ENV === 'test' ? null : setInterval(updateMockTelemetry, 3000);
+if (telemetryTimer) telemetryTimer.unref(); // 不阻止进程退出，避免Jest/PM2 reload时worker卡死
 
 /**
  * 故障告警生成器 - 当检测到新故障时，自动创建告警记录
@@ -428,7 +429,7 @@ setInterval(updateMockTelemetry, 3000);
  */
 const generatedAlarms = new Set(); // 记录已生成的告警，避免重复
 
-setInterval(() => {
+const alarmTimer = process.env.NODE_ENV === 'test' ? null : setInterval(() => {
   Object.keys(faultStates).forEach((droneId) => {
     const fault = faultStates[droneId];
     if (!fault) return;
@@ -471,6 +472,7 @@ setInterval(() => {
     }
   });
 }, 2000); // 每2秒检查一次
+if (alarmTimer) alarmTimer.unref(); // 不阻止进程退出，避免Jest/PM2 reload时worker卡死
 
 class DJIAPIAdapter {
   constructor() {
@@ -801,6 +803,15 @@ function clearCrashAlarmMark(droneId) {
   return false;
 }
 
+/**
+ * 清理所有定时器（用于 PM2 reload/shutdown 时避免定时器泄漏）
+ */
+function cleanupTimers() {
+  if (telemetryTimer) clearInterval(telemetryTimer);
+  if (alarmTimer) clearInterval(alarmTimer);
+  console.log('[DJI Adapter] 定时器已清理');
+}
+
 // 导出 DJIAPIAdapter 实例和故障模拟相关函数
 const djiAdapter = new DJIAPIAdapter();
 module.exports = djiAdapter;
@@ -810,3 +821,4 @@ module.exports.clearFault = clearFault;
 module.exports.getFaultState = getFaultState;
 module.exports.generateCrashAlarm = generateCrashAlarm;
 module.exports.clearCrashAlarmMark = clearCrashAlarmMark;
+module.exports.cleanupTimers = cleanupTimers;

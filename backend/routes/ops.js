@@ -1,8 +1,10 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
+const fs = require('fs');
+const path = require('path');
 const DataStore = require('../data/dataStore');
 const { success, error } = require('../utils/response');
-const { signToken } = require('../middleware/auth');
+const { signToken, requireRole } = require('../middleware/auth');
 
 const authRouter = express.Router();
 
@@ -253,7 +255,7 @@ authRouter.get('/users', (req, res) => {
   success(res, users, '获取用户列表成功');
 });
 
-authRouter.post('/users', async (req, res) => {
+authRouter.post('/users', requireRole('admin'), async (req, res) => {
   const { username, password, role, name } = req.body || {};
   
   if (!username || !password || !role) {
@@ -288,6 +290,218 @@ authRouter.post('/users', async (req, res) => {
   }
 
   success(res, newUser, '用户创建成功');
+});
+
+/* 更新用户角色 */
+authRouter.put('/users/:id', requireRole('admin'), (req, res) => {
+  const user = DataStore.users.getById(req.params.id);
+  if (!user) {
+    return error(res, `未找到用户: ${req.params.id}`, 404);
+  }
+
+  const { role, name, status } = req.body || {};
+  const updates = {};
+
+  if (role !== undefined) {
+    const validRoles = ['admin', 'operator', 'viewer'];
+    if (!validRoles.includes(role)) {
+      return error(res, `无效的角色: ${role}，可选值: ${validRoles.join(', ')}`, 400);
+    }
+    updates.role = role;
+  }
+  if (name !== undefined) {
+    updates.name = name;
+  }
+  if (status !== undefined) {
+    updates.status = status;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return error(res, '没有可更新的字段', 400);
+  }
+
+  const updated = DataStore.users.update(user.id, updates);
+
+  DataStore.auditLogs.add({
+    id: `LOG-${String(Date.now()).slice(-6)}`,
+    user: (req.user && req.user.username) || 'system',
+    action: 'update_user',
+    target: user.id,
+    ip: req.ip || '-',
+    timestamp: new Date().toISOString()
+  });
+
+  success(res, {
+    id: updated.id,
+    username: updated.username,
+    name: updated.name,
+    role: updated.role,
+    status: updated.status || 'enabled'
+  }, '用户更新成功');
+});
+
+/* 删除用户 */
+authRouter.delete('/users/:id', requireRole('admin'), (req, res) => {
+  const user = DataStore.users.getById(req.params.id);
+  if (!user) {
+    return error(res, `未找到用户: ${req.params.id}`, 404);
+  }
+
+  // 不允许删除自己
+  if (req.user && req.user.id === user.id) {
+    return error(res, '不允许删除当前登录用户', 400);
+  }
+
+  // 不允许删除最后一个管理员
+  if (user.role === 'admin') {
+    const admins = DataStore.users.getAll().filter(u => u.role === 'admin');
+    if (admins.length <= 1) {
+      return error(res, '不允许删除最后一个管理员账户', 400);
+    }
+  }
+
+  DataStore.users.delete(user.id);
+
+  DataStore.auditLogs.add({
+    id: `LOG-${String(Date.now()).slice(-6)}`,
+    user: (req.user && req.user.username) || 'system',
+    action: 'delete_user',
+    target: user.id,
+    ip: req.ip || '-',
+    timestamp: new Date().toISOString()
+  });
+
+  success(res, { id: user.id, deleted: true }, '用户已删除');
+});
+
+/* ========== 数据备份与恢复 API ========== */
+
+const BACKUP_DIR = path.join(__dirname, '..', '..', 'data', 'backups');
+
+// 确保备份目录存在
+function ensureBackupDir() {
+  if (!fs.existsSync(BACKUP_DIR)) {
+    fs.mkdirSync(BACKUP_DIR, { recursive: true });
+  }
+}
+
+// 数据备份路由
+const backupRouter = express.Router();
+
+/* 创建数据备份 */
+backupRouter.post('/', requireRole('admin'), (req, res) => {
+  try {
+    ensureBackupDir();
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const backupFileName = `backup_${timestamp}.json`;
+    const backupPath = path.join(BACKUP_DIR, backupFileName);
+
+    // 收集所有数据
+    const backupData = {
+      metadata: {
+        version: '1.0',
+        createdAt: new Date().toISOString(),
+        createdBy: (req.user && req.user.username) || 'system'
+      },
+      drones: DataStore.drones.getAll(),
+      alarms: DataStore.alarms.getAll(),
+      workOrders: DataStore.workOrders.getAll(),
+      inspectionPlans: DataStore.inspectionPlans.getAll(),
+      auditLogs: DataStore.auditLogs.getAll(),
+      geoFences: DataStore.geoFences.getAll(),
+      users: DataStore.users.getAll().map(u => ({
+        id: u.id,
+        username: u.username,
+        password: u.password,
+        role: u.role,
+        name: u.name,
+        createdAt: u.createdAt
+      }))
+    };
+
+    // 写入备份文件（先写临时文件再重命名，确保原子性）
+    const tempPath = backupPath + '.tmp';
+    fs.writeFileSync(tempPath, JSON.stringify(backupData, null, 2), 'utf-8');
+    fs.renameSync(tempPath, backupPath);
+
+    // 记录审计日志
+    DataStore.auditLogs.add({
+      id: `LOG-${String(Date.now()).slice(-6)}`,
+      user: (req.user && req.user.username) || 'system',
+      action: 'data_backup',
+      target: backupFileName,
+      ip: req.ip || '-',
+      timestamp: new Date().toISOString()
+    });
+
+    const stats = fs.statSync(backupPath);
+    success(res, {
+      fileName: backupFileName,
+      size: stats.size,
+      createdAt: backupData.metadata.createdAt,
+      recordCounts: {
+        drones: backupData.drones.length,
+        alarms: backupData.alarms.length,
+        workOrders: backupData.workOrders.length,
+        inspectionPlans: backupData.inspectionPlans.length,
+        auditLogs: backupData.auditLogs.length,
+        geoFences: backupData.geoFences.length,
+        users: backupData.users.length
+      }
+    }, '数据备份成功');
+  } catch (err) {
+    console.error('[backup] 备份失败:', err);
+    return error(res, '数据备份失败: ' + err.message, 500);
+  }
+});
+
+/* 获取备份列表 */
+backupRouter.get('/', (req, res) => {
+  try {
+    ensureBackupDir();
+    const files = fs.readdirSync(BACKUP_DIR).filter(f => f.endsWith('.json'));
+    const backups = files.map(f => {
+      const stats = fs.statSync(path.join(BACKUP_DIR, f));
+      return {
+        fileName: f,
+        size: stats.size,
+        createdAt: stats.mtime.toISOString()
+      };
+    }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    success(res, backups, '获取备份列表成功');
+  } catch (err) {
+    console.error('[backup] 获取备份列表失败:', err);
+    return error(res, '获取备份列表失败: ' + err.message, 500);
+  }
+});
+
+/* 删除备份 */
+backupRouter.delete('/:fileName', requireRole('admin'), (req, res) => {
+  try {
+    const fileName = path.basename(req.params.fileName);
+    const backupPath = path.join(BACKUP_DIR, fileName);
+
+    if (!fs.existsSync(backupPath)) {
+      return error(res, `未找到备份文件: ${fileName}`, 404);
+    }
+
+    fs.unlinkSync(backupPath);
+
+    DataStore.auditLogs.add({
+      id: `LOG-${String(Date.now()).slice(-6)}`,
+      user: (req.user && req.user.username) || 'system',
+      action: 'delete_backup',
+      target: fileName,
+      ip: req.ip || '-',
+      timestamp: new Date().toISOString()
+    });
+
+    success(res, { fileName, deleted: true }, '备份已删除');
+  } catch (err) {
+    console.error('[backup] 删除备份失败:', err);
+    return error(res, '删除备份失败: ' + err.message, 500);
+  }
 });
 
 const auditLogsRouter = express.Router();
@@ -336,4 +550,4 @@ auditLogsRouter.get('/', (req, res) => {
   }, '获取审计日志成功');
 });
 
-module.exports = { authRouter, auditLogsRouter };
+module.exports = { authRouter, auditLogsRouter, backupRouter };
