@@ -18,6 +18,11 @@ module.exports = {
       watch: false,
       autorestart: true,
       max_memory_restart: '500M',
+      min_uptime: '10s',
+      max_restarts: 5,
+      restart_delay: 3000,
+      listen_timeout: 5000,
+      kill_timeout: 3000,
       env: {
         NODE_ENV: 'production',
         PORT: 4000,
